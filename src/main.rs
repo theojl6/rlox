@@ -68,7 +68,7 @@ struct Token {
     token_type: TokenType,
     lexeme: String,
     literal: Literal,
-    line: i32,
+    line: usize,
 }
 
 fn main() {
@@ -108,7 +108,7 @@ fn run_prompt(had_error: &mut bool) {
 }
 
 fn run(source: &str) {
-    let mut scanner = Scanner::new(source);
+    let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
 
     for token in tokens {
@@ -116,16 +116,16 @@ fn run(source: &str) {
     }
 }
 
-struct Scanner<'a> {
-    source: &'a str,
+struct Scanner {
+    source: String,
     tokens: Vec<Token>,
-    start: i32,
-    current: i32,
-    line: i32,
+    start: usize,
+    current: usize,
+    line: usize,
 }
 
-impl<'a> Scanner<'a> {
-    fn new(source: &'a str) -> Self {
+impl Scanner {
+    fn new(source: String) -> Self {
         Self {
             source,
             tokens: Vec::new(),
@@ -134,7 +134,7 @@ impl<'a> Scanner<'a> {
             line: 1,
         }
     }
-    fn scan_tokens(&'a mut self) -> &Vec<Token> {
+    fn scan_tokens(&mut self) -> &Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
             self.scan_single_token();
@@ -142,23 +142,54 @@ impl<'a> Scanner<'a> {
         self.tokens.push(Token {
             token_type: TokenType::EOF,
             lexeme: String::from(""),
-            literal: Literal{},
+            literal: Literal {},
             line: self.line,
         });
         &self.tokens
     }
-    fn is_at_end(&'a self) -> bool {
+    fn is_at_end(&mut self) -> bool {
         usize::try_from(self.current)
-            .map(|current| current > self.source.len())
-            .unwrap_or(false)
+            .map(|current| current >= self.source.len())
+            .unwrap_or(true)
     }
-    fn scan_single_token(&'a self) {}
+    fn scan_single_token(&mut self) {
+        let c = self.advance();
+        println!("single token: {:?}", &c);
+        match c {
+            Some('(') => self.add_token(TokenType::LeftParen, Literal {}),
+            Some(')') => self.add_token(TokenType::RightParen, Literal {}),
+            Some('{') => self.add_token(TokenType::LeftBrace, Literal {}),
+            Some('}') => self.add_token(TokenType::RightBrace, Literal {}),
+            Some(',') => self.add_token(TokenType::Comma, Literal {}),
+            Some('.') => self.add_token(TokenType::Dot, Literal {}),
+            Some('-') => self.add_token(TokenType::Minus, Literal {}),
+            Some('+') => self.add_token(TokenType::Plus, Literal {}),
+            Some(';') => self.add_token(TokenType::Semicolon, Literal {}),
+            Some('*') => self.add_token(TokenType::Star, Literal {}),
+            Some(_) => error(self.line, String::from("Unexpected character.")),
+            None => (),
+        }
+    }
+    fn advance(&mut self) -> Option<char> {
+        let c = self.source.chars().nth(self.current);
+        self.current = self.current + 1;
+        c
+    }
+    fn add_token(&mut self, token_type: TokenType, literal: Literal) {
+        let text = &self.source[self.start..self.current];
+        self.tokens.push(Token {
+            token_type,
+            lexeme: String::from(text),
+            literal,
+            line: self.line,
+        });
+    }
 }
 
-fn error(line: i32, message: String) {
+fn error(line: usize, message: String) {
     report(line, String::from(""), message);
 }
 
-fn report(line: i32, at: String, message: String) {
+fn report(line: usize, at: String, message: String) {
     println!("[line {line}] Error {at}: {message}");
 }
