@@ -148,9 +148,7 @@ impl Scanner {
         &self.tokens
     }
     fn is_at_end(&mut self) -> bool {
-        usize::try_from(self.current)
-            .map(|current| current >= self.source.len())
-            .unwrap_or(true)
+        self.current >= self.source.len()
     }
     fn scan_single_token(&mut self) {
         let c = self.advance();
