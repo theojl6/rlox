@@ -4,6 +4,7 @@ use std::fs;
 use std::io;
 use std::usize;
 
+#[derive(Debug)]
 pub enum TokenType {
     // Single character tokens
     LeftParen,
@@ -59,8 +60,10 @@ impl fmt::Display for TokenType {
     }
 }
 
+#[derive(Debug)]
 struct Literal {}
 
+#[derive(Debug)]
 struct Token {
     token_type: TokenType,
     lexeme: String,
@@ -109,13 +112,13 @@ fn run(source: &str) {
     let tokens = scanner.scan_tokens();
 
     for token in tokens {
-        println!("{}", token);
+        println!("{:?}", token);
     }
 }
 
 struct Scanner<'a> {
     source: &'a str,
-    tokens: Vec<TokenType>,
+    tokens: Vec<Token>,
     start: i32,
     current: i32,
     line: i32,
@@ -131,10 +134,17 @@ impl<'a> Scanner<'a> {
             line: 1,
         }
     }
-    fn scan_tokens(&'a mut self) -> &Vec<TokenType> {
+    fn scan_tokens(&'a mut self) -> &Vec<Token> {
         while !self.is_at_end() {
             self.start = self.current;
+            self.scan_single_token();
         }
+        self.tokens.push(Token {
+            token_type: TokenType::EOF,
+            lexeme: String::from(""),
+            literal: Literal{},
+            line: self.line,
+        });
         &self.tokens
     }
     fn is_at_end(&'a self) -> bool {
@@ -142,6 +152,7 @@ impl<'a> Scanner<'a> {
             .map(|current| current > self.source.len())
             .unwrap_or(false)
     }
+    fn scan_single_token(&'a self) {}
 }
 
 fn error(line: i32, message: String) {
