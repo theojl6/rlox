@@ -182,6 +182,12 @@ impl Scanner {
             line: self.line,
         });
     }
+    fn matches(&mut self) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+        true
+    }
 }
 
 fn error(line: usize, message: String) {
