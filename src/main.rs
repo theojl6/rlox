@@ -164,6 +164,15 @@ impl Scanner {
             Some('+') => self.add_token(TokenType::Plus, Literal {}),
             Some(';') => self.add_token(TokenType::Semicolon, Literal {}),
             Some('*') => self.add_token(TokenType::Star, Literal {}),
+
+            Some('!') => {
+                if self.matches(&'=') {
+                    self.add_token(TokenType::BangEqual, Literal {})
+                } else {
+                    self.add_token(TokenType::Bang, Literal {})
+                }
+            }
+
             Some(_) => error(self.line, String::from("Unexpected character.")),
             None => (),
         }
@@ -182,8 +191,11 @@ impl Scanner {
             line: self.line,
         });
     }
-    fn matches(&mut self) -> bool {
+    fn matches(&mut self, expected: &char) -> bool {
         if self.is_at_end() {
+            return false;
+        }
+        if &self.source.chars().nth(self.current).unwrap() != expected {
             return false;
         }
         true
