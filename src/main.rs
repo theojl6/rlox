@@ -61,13 +61,16 @@ impl fmt::Display for TokenType {
 }
 
 #[derive(Debug)]
-struct Literal {}
+enum Literal {
+    String(String),
+    Number(f32),
+}
 
 #[derive(Debug)]
 struct Token {
     token_type: TokenType,
     lexeme: String,
-    literal: Literal,
+    literal: Option<Literal>,
     line: usize,
 }
 
@@ -142,7 +145,7 @@ impl Scanner {
         self.tokens.push(Token {
             token_type: TokenType::EOF,
             lexeme: String::from(""),
-            literal: Literal {},
+            literal: None,
             line: self.line,
         });
         &self.tokens
@@ -154,26 +157,76 @@ impl Scanner {
         let c = self.advance();
         println!("single token: {:?}", &c);
         match c {
-            Some('(') => self.add_token(TokenType::LeftParen, Literal {}),
-            Some(')') => self.add_token(TokenType::RightParen, Literal {}),
-            Some('{') => self.add_token(TokenType::LeftBrace, Literal {}),
-            Some('}') => self.add_token(TokenType::RightBrace, Literal {}),
-            Some(',') => self.add_token(TokenType::Comma, Literal {}),
-            Some('.') => self.add_token(TokenType::Dot, Literal {}),
-            Some('-') => self.add_token(TokenType::Minus, Literal {}),
-            Some('+') => self.add_token(TokenType::Plus, Literal {}),
-            Some(';') => self.add_token(TokenType::Semicolon, Literal {}),
-            Some('*') => self.add_token(TokenType::Star, Literal {}),
+            Some('(') => self.add_token(TokenType::LeftParen),
+            Some(')') => self.add_token(TokenType::RightParen),
+            Some('{') => self.add_token(TokenType::LeftBrace),
+            Some('}') => self.add_token(TokenType::RightBrace),
+            Some(',') => self.add_token(TokenType::Comma),
+            Some('.') => self.add_token(TokenType::Dot),
+            Some('-') => self.add_token(TokenType::Minus),
+            Some('+') => self.add_token(TokenType::Plus),
+            Some(';') => self.add_token(TokenType::Semicolon),
+            Some('*') => self.add_token(TokenType::Star),
 
             Some('!') => {
                 if self.matches(&'=') {
-                    self.add_token(TokenType::BangEqual, Literal {})
+                    self.add_token(TokenType::BangEqual)
                 } else {
-                    self.add_token(TokenType::Bang, Literal {})
+                    self.add_token(TokenType::Bang)
                 }
             }
 
-            Some(_) => error(self.line, String::from("Unexpected character.")),
+            Some('=') => {
+                if self.matches(&'=') {
+                    self.add_token(TokenType::EqualEqual)
+                } else {
+                    self.add_token(TokenType::Equal)
+                }
+            }
+
+            Some('<') => {
+                if self.matches(&'=') {
+                    self.add_token(TokenType::LessEqual)
+                } else {
+                    self.add_token(TokenType::Less)
+                }
+            }
+
+            Some('>') => {
+                if self.matches(&'=') {
+                    self.add_token(TokenType::GreaterEqual)
+                } else {
+                    self.add_token(TokenType::Greater)
+                }
+            }
+
+            Some('/') => {
+                if self.matches(&'/') {
+                    while self.peek() != '\n' && !self.is_at_end() {
+                        self.advance();
+                    }
+                } else {
+                    self.add_token(TokenType::Slash)
+                }
+            }
+
+            Some(' ') | Some('\r') | Some('\t') => {}
+
+            Some('\n') => {
+                self.line += 1;
+            }
+
+            Some('"') => {
+                self.string();
+            }
+
+            Some(c) => {
+                if c.is_digit(10) {
+                    self.number();
+                } else {
+                    error(self.line, String::from("Unexpected character."))
+                }
+            }
             None => (),
         }
     }
@@ -182,7 +235,17 @@ impl Scanner {
         self.current = self.current + 1;
         c
     }
-    fn add_token(&mut self, token_type: TokenType, literal: Literal) {
+    fn add_token(&mut self, token_type: TokenType) {
+        let text = &self.source[self.start..self.current];
+        self.tokens.push(Token {
+            token_type,
+            lexeme: String::from(text),
+            literal: None,
+            line: self.line,
+        });
+    }
+
+    fn add_token_with_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
         let text = &self.source[self.start..self.current];
         self.tokens.push(Token {
             token_type,
@@ -199,6 +262,63 @@ impl Scanner {
             return false;
         }
         true
+    }
+    fn peek(&mut self) -> char {
+        if self.is_at_end() {
+            return '\0';
+        }
+        return self.source.chars().nth(self.current).unwrap();
+    }
+    fn peek_next(&mut self) -> char {
+        if self.current + 1 >= self.source.len() {
+            return '\0';
+        }
+        return self.source.chars().nth(self.current + 1).unwrap();
+    }
+    fn string(&mut self) {
+        while self.peek() != '"' && !self.is_at_end() {
+            if self.peek() == '\n' {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        if self.is_at_end() {
+            error(self.line, String::from("Unterminated string."));
+            return;
+        }
+
+        // The closing ".
+        self.advance();
+
+        // Trim the surrounding quotes.
+        self.add_token_with_literal(
+            TokenType::String,
+            Some(Literal::String(String::from(
+                &self.source[self.start + 1..self.current - 1],
+            ))),
+        )
+    }
+
+    fn number(&mut self) {
+        while self.peek().is_digit(10) {
+            self.advance();
+        }
+
+        if self.peek() == '.' && self.peek_next().is_digit(10) {
+            self.advance();
+
+            while self.peek().is_digit(10) {
+                self.advance();
+            }
+        }
+
+        self.add_token_with_literal(
+            TokenType::Number,
+            Some(Literal::Number(
+                self.source[self.start..self.current].parse().unwrap(),
+            )),
+        )
     }
 }
 
