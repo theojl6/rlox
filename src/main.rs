@@ -155,7 +155,6 @@ impl Scanner {
     }
     fn scan_single_token(&mut self) {
         let c = self.advance();
-        println!("single token: {:?}", &c);
         match c {
             Some('(') => self.add_token(TokenType::LeftParen),
             Some(')') => self.add_token(TokenType::RightParen),
@@ -223,6 +222,8 @@ impl Scanner {
             Some(c) => {
                 if c.is_digit(10) {
                     self.number();
+                } else if c.is_ascii_alphabetic() || c == '_' {
+                    self.identifier();
                 } else {
                     error(self.line, String::from("Unexpected character."))
                 }
@@ -319,6 +320,33 @@ impl Scanner {
                 self.source[self.start..self.current].parse().unwrap(),
             )),
         )
+    }
+
+    fn identifier(&mut self) {
+        while self.peek().is_ascii_alphanumeric() || self.peek() == '_' {
+            self.advance();
+        }
+        let text = &self.source[self.start..self.current];
+        let keyword = match text {
+            "and" => TokenType::And,
+            "class" => TokenType::Class,
+            "else" => TokenType::Else,
+            "false" => TokenType::False,
+            "for" => TokenType::For,
+            "fun" => TokenType::Fun,
+            "if" => TokenType::If,
+            "nil" => TokenType::Nil,
+            "or" => TokenType::Or,
+            "print" => TokenType::Print,
+            "return" => TokenType::Return,
+            "super" => TokenType::Super,
+            "this" => TokenType::This,
+            "true" => TokenType::True,
+            "var" => TokenType::Var,
+            "while" => TokenType::While,
+            _ => TokenType::Identifier,
+        };
+        self.add_token(keyword);
     }
 }
 
