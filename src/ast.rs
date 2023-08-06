@@ -4,6 +4,7 @@ use crate::token::{Literal, Token};
 pub enum Expr {
     Assign(Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
+    Grouping(Box<Expr>),
     Literal(Literal),
     Unary(Token, Box<Expr>),
 }
@@ -17,16 +18,13 @@ pub struct Interpretor;
 impl Visitor<()> for Interpretor {
     fn visit_expr(&mut self, e: &Expr) {
         match e {
-            Expr::Assign(_, _) => {
-                println!("this assign");
-            }
+            Expr::Assign(_, _) => todo!(),
             Expr::Binary(left, _, right) => {
                 self.visit_expr(&left);
                 self.visit_expr(&right);
             }
-            Expr::Literal(_) => {
-                println!("this literal");
-            }
+            Expr::Grouping(_) => todo!(),
+            Expr::Literal(_) => todo!(),
             Expr::Unary(_, _) => todo!(),
         }
     }
@@ -60,6 +58,10 @@ impl Visitor<String> for AstPrinter {
                 let left_expr = &self.visit_expr(left);
                 let right_expr = &self.visit_expr(right);
                 self.parenthesize(&mut ast, &op.lexeme, vec![left_expr, right_expr]);
+            }
+            Expr::Grouping(expr) => {
+                let expr = &self.visit_expr(expr);
+                self.parenthesize(&mut ast, &"group", vec![expr]);
             }
             Expr::Literal(literal) => match literal {
                 Literal::String(val) => {
@@ -115,6 +117,14 @@ mod tests {
     }
 
     #[test]
+    fn grouping() {
+        let mut ast_printer = AstPrinter {};
+        let grouping_expr =
+            Expr::Grouping(Box::new(Expr::Literal(Literal::String("hello".into()))));
+        assert_eq!(ast_printer.visit_expr(&grouping_expr), "(group hello)");
+    }
+
+    #[test]
     fn binary_with_binary() {
         let mut ast_printer = AstPrinter {};
         let binary_expr = Expr::Binary(
@@ -141,6 +151,35 @@ mod tests {
         assert_eq!(
             ast_printer.visit_expr(&binary_expr_with_binary_expr),
             "(- 0 (+ 0 1))"
+        )
+    }
+
+    #[test]
+    fn end_chapter_test() {
+        let mut ast_printer = AstPrinter {};
+        let expression = Expr::Binary(
+            Box::new(Expr::Unary(
+                Token {
+                    token_type: TokenType::Minus,
+                    lexeme: String::from("-"),
+                    literal: None,
+                    line: 0,
+                },
+                Box::new(Expr::Literal(Literal::Number(123.0))),
+            )),
+            Token {
+                token_type: TokenType::Star,
+                lexeme: String::from("*"),
+                literal: None,
+                line: 0,
+            },
+            Box::new(Expr::Grouping(Box::new(Expr::Literal(Literal::Number(
+                45.67,
+            ))))),
+        );
+        assert_eq!(
+            ast_printer.visit_expr(&expression),
+            "(* (- 123) (group 45.67))"
         )
     }
 }
