@@ -3,6 +3,7 @@ use std::fs;
 use std::io;
 use std::usize;
 
+mod ast;
 mod scanner;
 mod token;
 use crate::scanner::Scanner;
