@@ -4,6 +4,7 @@ use std::io;
 use std::usize;
 
 mod ast;
+mod parser;
 mod scanner;
 mod token;
 use crate::scanner::Scanner;

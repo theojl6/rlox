@@ -25,7 +25,7 @@ impl Scanner {
             self.scan_single_token();
         }
         self.tokens.push(Token {
-            token_type: TokenType::EOF,
+            token_type: TokenType::Eof,
             lexeme: String::from(""),
             literal: None,
             line: self.line,

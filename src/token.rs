@@ -1,6 +1,6 @@
 use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum TokenType {
     // Single character tokens
     LeftParen,
@@ -47,7 +47,7 @@ pub enum TokenType {
     Var,
     While,
 
-    EOF,
+    Eof,
 }
 
 impl fmt::Display for TokenType {
@@ -60,6 +60,9 @@ impl fmt::Display for TokenType {
 pub enum Literal {
     String(String),
     Number(f32),
+    True,
+    False,
+    Nil,
 }
 
 #[derive(Clone, Debug)]
