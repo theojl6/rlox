@@ -7,6 +7,9 @@ mod ast;
 mod parser;
 mod scanner;
 mod token;
+use token::Token;
+use token::TokenType;
+
 use crate::scanner::Scanner;
 
 fn main() {
@@ -54,10 +57,19 @@ fn run(source: &str) {
     }
 }
 
-fn error(line: usize, message: String) {
-    report(line, String::from(""), message);
+fn error(line: usize, message: &str) {
+    report(line, &"", message);
 }
 
-fn report(line: usize, at: String, message: String) {
+fn report(line: usize, at: &str, message: &str) {
     println!("[line {line}] Error {at}: {message}");
+}
+
+pub fn lox_error(token: &Token, message: &str) {
+    if token.token_type == TokenType::Eof {
+        report(token.line, " at end", message);
+    } else {
+        let at = " at ".to_owned() + &token.lexeme + "'";
+        report(token.line, &at, message);
+    }
 }

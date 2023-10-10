@@ -1,5 +1,3 @@
-use std::error::Error;
-
 use crate::ast::Expr;
 use crate::token::{Literal, Token, TokenType};
 pub struct Parser<'a> {
@@ -12,15 +10,19 @@ impl<'a> Parser<'a> {
         Self { tokens, current: 0 }
     }
 
-    fn equality(&mut self) -> Expr {
-        let mut expr = self.comparison();
+    fn expression(&mut self) -> Result<Expr, &'static str> {
+        self.equality()
+    }
+
+    fn equality(&mut self) -> Result<Expr, &'static str> {
+        let mut expr = self.comparison()?;
 
         while self.matches(&vec![TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
-            let right = self.comparison();
+            let right = self.comparison()?;
             expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
-        expr
+        Ok(expr)
     }
 
     fn matches(&mut self, token_types: &Vec<TokenType>) -> bool {
@@ -40,7 +42,7 @@ impl<'a> Parser<'a> {
         self.peek().token_type == *token_type
     }
 
-    fn advance(&mut self) -> &Token {
+    fn advance(&mut self) -> Token {
         if !self.is_at_end() {
             self.current = self.current + 1;
         }
@@ -55,12 +57,12 @@ impl<'a> Parser<'a> {
         &self.tokens[self.current]
     }
 
-    fn previous(&self) -> &Token {
-        &self.tokens[self.current - 1]
+    fn previous(&self) -> Token {
+        self.tokens[self.current - 1].clone()
     }
 
-    fn comparison(&mut self) -> Expr {
-        let mut expr = self.term();
+    fn comparison(&mut self) -> Result<Expr, &'static str> {
+        let mut expr = self.term()?;
         while self.matches(&vec![
             TokenType::Greater,
             TokenType::GreaterEqual,
@@ -68,42 +70,42 @@ impl<'a> Parser<'a> {
             TokenType::LessEqual,
         ]) {
             let operator = self.previous();
-            let right = self.term();
+            let right = self.term()?;
             expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
-        expr
+        Ok(expr)
     }
 
-    fn term(&self) -> Expr {
-        let mut expr = self.factor();
+    fn term(&mut self) -> Result<Expr, &'static str> {
+        let mut expr = self.factor()?;
         while self.matches(&vec![TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous();
-            let right = self.factor();
+            let right = self.factor()?;
             expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
-        expr
+        Ok(expr)
     }
 
-    fn factor(&self) -> Expr {
-        let mut expr = self.unary();
+    fn factor(&mut self) -> Result<Expr, &'static str> {
+        let mut expr = self.unary()?;
         while self.matches(&vec![TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
-            let right = self.unary();
+            let right = self.unary()?;
             expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
         }
-        expr
+        Ok(expr)
     }
 
-    fn unary(&self) -> Expr {
+    fn unary(&mut self) -> Result<Expr, &'static str> {
         if self.matches(&vec![TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
-            let right = self.unary();
-            return Expr::Unary(operator.clone(), Box::new(right));
+            let right = self.unary()?;
+            return Ok(Expr::Unary(operator.clone(), Box::new(right)));
         }
         return self.primary();
     }
 
-    fn primary(&self) -> Result<Expr, Box<dyn Error>> {
+    fn primary(&mut self) -> Result<Expr, &'static str> {
         if self.matches(&vec![TokenType::False]) {
             return Ok(Expr::Literal(Literal::False));
         }
@@ -117,10 +119,23 @@ impl<'a> Parser<'a> {
             return Ok(Expr::Literal(self.previous().literal.expect("BOOM")));
         }
         if self.matches(&vec![TokenType::LeftParen]) {
-            let expr = self.expression();
-            self.consume(TokenType::RightParen, &"Expect ')' after expression.");
-            return Ok(Expr::Grouping(expr));
+            let expr = self.expression()?;
+            let _ = self.consume(&TokenType::RightParen, &"Expect ')' after expression.");
+            return Ok(Expr::Grouping(Box::new(expr)));
         }
-        return Err("Expected expression, found BOOM".into());
+        return Err(&"Expected expression, found BOOM");
+    }
+
+    fn consume(&mut self, token_type: &TokenType, message: &str) -> Result<Token, String> {
+        if self.check(token_type) == true {
+            return Ok(self.advance());
+        }
+
+        return Err(self.error(self.peek(), message));
+    }
+
+    fn error(&self, token: &Token, message: &str) -> String {
+        crate::lox_error(token, message);
+        message.into()
     }
 }

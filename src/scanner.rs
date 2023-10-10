@@ -107,7 +107,7 @@ impl Scanner {
                 } else if c.is_ascii_alphabetic() || c == '_' {
                     self.identifier();
                 } else {
-                    error(self.line, String::from("Unexpected character."))
+                    error(self.line, &"Unexpected character.")
                 }
             }
             None => (),
@@ -167,7 +167,7 @@ impl Scanner {
         }
 
         if self.is_at_end() {
-            error(self.line, String::from("Unterminated string."));
+            error(self.line, &"Unterminated string.");
             return;
         }
 

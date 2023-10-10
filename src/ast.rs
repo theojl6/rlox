@@ -70,6 +70,15 @@ impl Visitor<String> for AstPrinter {
                 Literal::Number(val) => {
                     ast.push_str(&val.to_string());
                 }
+                Literal::True => {
+                    ast.push_str(&"true");
+                }
+                Literal::False => {
+                    ast.push_str(&"false");
+                }
+                Literal::Nil => {
+                    ast.push_str(&"nil");
+                }
             },
             Expr::Unary(op, expr) => {
                 let expr = &self.visit_expr(expr);
