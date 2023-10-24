@@ -1,13 +1,24 @@
+use std::error::Error;
+
 use crate::ast::Expr;
 use crate::token::{Literal, Token, TokenType};
 pub struct Parser<'a> {
+    pub parse_error: Option<Box<dyn Error>>,
     pub tokens: &'a Vec<Token>,
     pub current: usize,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+        Self {
+            tokens,
+            current: 0,
+            parse_error: None,
+        }
+    }
+
+    pub fn parse(&mut self) -> Result<Expr, &'static str> {
+        self.expression()
     }
 
     fn expression(&mut self) -> Result<Expr, &'static str> {
@@ -59,6 +70,33 @@ impl<'a> Parser<'a> {
 
     fn previous(&self) -> Token {
         self.tokens[self.current - 1].clone()
+    }
+
+    fn error(&self, token: &Token, message: &str) -> Box<dyn Error> {
+        crate::lox_error(token, message);
+        return Box::new(std::fmt::Error);
+    }
+
+    fn synchronize(&mut self) {
+        self.advance();
+
+        while !self.is_at_end() {
+            if self.previous().token_type == TokenType::Semicolon {
+                return;
+            }
+            match self.peek().token_type {
+                TokenType::Class
+                | TokenType::Fun
+                | TokenType::Var
+                | TokenType::For
+                | TokenType::If
+                | TokenType::While
+                | TokenType::Print
+                | TokenType::Return => return,
+                _ => (),
+            }
+            self.advance();
+        }
     }
 
     fn comparison(&mut self) -> Result<Expr, &'static str> {
@@ -123,7 +161,7 @@ impl<'a> Parser<'a> {
             let _ = self.consume(&TokenType::RightParen, &"Expect ')' after expression.");
             return Ok(Expr::Grouping(Box::new(expr)));
         }
-        return Err(&"Expected expression, found BOOM");
+        return Err(&"Expected expression.");
     }
 
     fn consume(&mut self, token_type: &TokenType, message: &str) -> Result<Token, String> {
@@ -131,11 +169,6 @@ impl<'a> Parser<'a> {
             return Ok(self.advance());
         }
 
-        return Err(self.error(self.peek(), message));
-    }
-
-    fn error(&self, token: &Token, message: &str) -> String {
-        crate::lox_error(token, message);
-        message.into()
+        return Err(self.error(self.peek(), message).to_string());
     }
 }

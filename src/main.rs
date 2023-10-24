@@ -10,6 +10,9 @@ mod token;
 use token::Token;
 use token::TokenType;
 
+use crate::ast::AstPrinter;
+use crate::ast::Visitor;
+use crate::parser::Parser;
 use crate::scanner::Scanner;
 
 fn main() {
@@ -51,9 +54,14 @@ fn run_prompt(had_error: &mut bool) {
 fn run(source: &str) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
-
-    for token in tokens {
-        println!("{:?}", token);
+    let mut parser = Parser::new(tokens);
+    let expr = parser.parse();
+    match expr {
+        Ok(expr) => {
+            let mut ast_printer = AstPrinter {};
+            println!("{}", ast_printer.visit_expr(&expr));
+        }
+        Err(_) => (),
     }
 }
 
