@@ -13,24 +13,7 @@ pub trait Visitor<T> {
     fn visit_expr(&mut self, e: &Expr) -> T;
 }
 
-pub struct Interpretor;
-
-impl Visitor<()> for Interpretor {
-    fn visit_expr(&mut self, e: &Expr) {
-        match e {
-            Expr::Assign(_, _) => todo!(),
-            Expr::Binary(left, _, right) => {
-                self.visit_expr(&left);
-                self.visit_expr(&right);
-            }
-            Expr::Grouping(_) => todo!(),
-            Expr::Literal(_) => todo!(),
-            Expr::Unary(_, _) => todo!(),
-        }
-    }
-}
-
-pub struct AstPrinter {}
+pub struct AstPrinter;
 
 impl AstPrinter {
     fn parenthesize(

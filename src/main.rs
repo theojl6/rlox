@@ -4,6 +4,7 @@ use std::io;
 use std::usize;
 
 mod ast;
+mod interpreter;
 mod parser;
 mod scanner;
 mod token;
@@ -58,7 +59,7 @@ fn run(source: &str) {
     let expr = parser.parse();
     match expr {
         Ok(expr) => {
-            let mut ast_printer = AstPrinter {};
+            let mut ast_printer = AstPrinter;
             println!("{}", ast_printer.visit_expr(&expr));
         }
         Err(_) => (),
