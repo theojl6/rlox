@@ -1,6 +1,9 @@
+use std::fmt;
 use crate::ast::{Expr, Visitor};
+use crate::runtime_error::RuntimeError;
 use crate::token::{Literal, TokenType};
 
+#[derive(Debug)]
 pub enum Object {
     String(String),
     Number(f32),
@@ -8,67 +11,80 @@ pub enum Object {
     Nil,
 }
 
+impl fmt::Display for Object {
+    // todo: format into rlox representations instead of printing rust enums
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 pub struct Interpretor;
 
-impl Visitor<Object> for Interpretor {
-    fn visit_expr(&mut self, e: &Expr) -> Object {
+impl Interpretor {
+    pub fn interpret(&mut self, expression: &Expr) -> Result<Object, RuntimeError> {
+         self.visit_expr(expression)
+    }
+}
+
+impl Visitor<Result<Object, RuntimeError>> for Interpretor {
+    fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign(_, _) => todo!(),
             Expr::Binary(left, t, right) => match t.token_type {
                 TokenType::BangEqual => {
-                    Object::Bool(is_equal(&self.visit_expr(left), &self.visit_expr(right)))
-                }
-                TokenType::Greater => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Bool(l > r),
-                    (_, _) => Object::Nil,
+                    Ok(Object::Bool(is_equal(&self.visit_expr(left)?, &self.visit_expr(right)?)))
                 },
-                TokenType::GreaterEqual => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Bool(l >= r),
-                    (_, _) => Object::Nil,
+                TokenType::Greater => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l > r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                TokenType::Less => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Bool(l < r),
-                    (_, _) => Object::Nil,
+                TokenType::GreaterEqual => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l >= r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                TokenType::LessEqual => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Bool(l <= r),
-                    (_, _) => Object::Nil,
+                TokenType::Less => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l < r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                TokenType::Minus => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Number(l - r),
-                    (_, _) => Object::Nil,
+                TokenType::LessEqual => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l <= r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                TokenType::Plus => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Number(l + r),
-                    (Object::String(l), Object::String(r)) => Object::String(l + &r),
-                    (_, _) => Object::Nil,
+                TokenType::Minus => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l - r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                TokenType::Slash => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Number(l / r),
-                    (_, _) => Object::Nil,
+                TokenType::Plus => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l + r)),
+                    (Object::String(l), Object::String(r)) => Ok(Object::String(l + &r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be two numbers or two strings.")),
                 },
-                TokenType::Star => match (self.visit_expr(left), self.visit_expr(right)) {
-                    (Object::Number(l), Object::Number(r)) => Object::Number(l * r),
-                    (_, _) => Object::Nil,
+                TokenType::Slash => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l / r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                _ => Object::Nil,
+                TokenType::Star => match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                    (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l * r)),
+                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                },
+                _ => Ok(Object::Nil),
             },
 
             Expr::Grouping(e) => self.visit_expr(e),
             Expr::Literal(literal) => match literal {
-                Literal::String(val) => Object::String(val.to_string()),
-                Literal::Number(val) => Object::Number(*val),
-                Literal::True => Object::Bool(true),
-                Literal::False => Object::Bool(false),
-                Literal::Nil => Object::Nil,
+                Literal::String(val) => Ok(Object::String(val.to_string())),
+                Literal::Number(val) => Ok(Object::Number(*val)),
+                Literal::True => Ok(Object::Bool(true)),
+                Literal::False => Ok(Object::Bool(false)),
+                Literal::Nil => Ok(Object::Nil),
             },
             Expr::Unary(t, e) => match t.token_type {
-                TokenType::Minus => match self.visit_expr(e) {
-                    Object::Number(n) => Object::Number(-n),
-                    _ => Object::Nil,
+                TokenType::Minus => match self.visit_expr(e)? {
+                    Object::Number(n) => Ok(Object::Number(-n)),
+                    _ => Err(RuntimeError::new(t.clone(), "Operand must be a number")),
                 },
-                TokenType::Bang => Object::Bool(is_truthy(&self.visit_expr(e))),
-                _ => Object::Nil,
+                TokenType::Bang => Ok(Object::Bool(is_truthy(&self.visit_expr(e)?))),
+                _ => Ok(Object::Nil),
             },
         }
     }
