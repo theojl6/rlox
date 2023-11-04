@@ -29,13 +29,13 @@ fn main() {
     } else if args.len() == 2 {
         run_file(&args[1], &mut had_error, &mut had_runtime_error);
     } else {
-        run_prompt(&mut had_error);
+        run_prompt(&mut had_error, &mut had_runtime_error);
     }
 }
 
 fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-    run(contents.as_str(), had_runtime_error);
+    run(&contents, had_error, had_runtime_error);
     if *had_error {
         process::exit(65);
     }
@@ -44,7 +44,7 @@ fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     }
 }
 
-fn run_prompt(had_error: &mut bool) {
+fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool) {
     loop {
         let mut prompt = String::new();
         println!("> ");
@@ -55,20 +55,20 @@ fn run_prompt(had_error: &mut bool) {
         if prompt == "exit" || prompt == "" {
             break;
         }
-        run(prompt.as_str(), had_error);
+        run(prompt.as_str(), had_error, had_runtime_error);
         *had_error = false;
     }
 }
 
-fn run(source: &str, had_runtime_error: &mut bool) {
+fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
     let expr = parser.parse();
     match expr {
         Ok(expr) => {
-            // let mut ast_printer = AstPrinter;
-            // println!("{}", ast_printer.visit_expr(&expr));
+            let mut ast_printer = AstPrinter;
+            println!("{}", ast_printer.visit_expr(&expr));
             let mut interpreter = Interpretor;
             let value = interpreter.interpret(&expr);
             match value {
@@ -78,7 +78,9 @@ fn run(source: &str, had_runtime_error: &mut bool) {
                 Err(e) => lox_runtime_error(e, had_runtime_error),
             }
         }
-        Err(_) => (),
+        Err(e) => {
+            *had_error = true;
+        }
     }
 }
 
