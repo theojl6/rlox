@@ -6,6 +6,7 @@ use std::usize;
 mod ast;
 mod interpreter;
 mod parser;
+mod runtime_error;
 mod scanner;
 mod token;
 use token::Token;
