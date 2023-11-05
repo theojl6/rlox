@@ -144,6 +144,7 @@ impl Scanner {
         if &self.source.chars().nth(self.current).unwrap() != expected {
             return false;
         }
+        self.current += 1;
         true
     }
     fn peek(&mut self) -> char {

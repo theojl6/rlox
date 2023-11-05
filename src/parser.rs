@@ -154,7 +154,9 @@ impl<'a> Parser<'a> {
             return Ok(Expr::Literal(Literal::Nil));
         }
         if self.matches(&vec![TokenType::Number, TokenType::String]) {
-            return Ok(Expr::Literal(self.previous().literal.expect("BOOM")));
+            return Ok(Expr::Literal(
+                self.previous().literal.expect("No literal found in token"),
+            ));
         }
         if self.matches(&vec![TokenType::LeftParen]) {
             let expr = self.expression()?;

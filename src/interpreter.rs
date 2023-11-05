@@ -1,7 +1,7 @@
-use std::fmt;
 use crate::ast::{Expr, Visitor};
 use crate::runtime_error::RuntimeError;
 use crate::token::{Literal, TokenType};
+use std::fmt;
 
 #[derive(Debug)]
 pub enum Object {
@@ -22,7 +22,7 @@ pub struct Interpretor;
 
 impl Interpretor {
     pub fn interpret(&mut self, expression: &Expr) -> Result<Object, RuntimeError> {
-         self.visit_expr(expression)
+        self.visit_expr(expression)
     }
 }
 
@@ -31,17 +31,24 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
         match e {
             Expr::Assign(_, _) => todo!(),
             Expr::Binary(left, t, right) => match t.token_type {
-                TokenType::BangEqual => {
-                    Ok(Object::Bool(is_equal(&self.visit_expr(left)?, &self.visit_expr(right)?)))
-                },
+                TokenType::BangEqual => Ok(Object::Bool(!is_equal(
+                    &self.visit_expr(left)?,
+                    &self.visit_expr(right)?,
+                ))),
+                TokenType::EqualEqual => Ok(Object::Bool(is_equal(
+                    &self.visit_expr(left)?,
+                    &self.visit_expr(right)?,
+                ))),
                 TokenType::Greater => match (self.visit_expr(left)?, self.visit_expr(right)?) {
                     (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l > r)),
                     (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                 },
-                TokenType::GreaterEqual => match (self.visit_expr(left)?, self.visit_expr(right)?) {
-                    (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l >= r)),
-                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
-                },
+                TokenType::GreaterEqual => {
+                    match (self.visit_expr(left)?, self.visit_expr(right)?) {
+                        (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l >= r)),
+                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                    }
+                }
                 TokenType::Less => match (self.visit_expr(left)?, self.visit_expr(right)?) {
                     (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l < r)),
                     (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
@@ -57,7 +64,10 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
                 TokenType::Plus => match (self.visit_expr(left)?, self.visit_expr(right)?) {
                     (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l + r)),
                     (Object::String(l), Object::String(r)) => Ok(Object::String(l + &r)),
-                    (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be two numbers or two strings.")),
+                    (_, _) => Err(RuntimeError::new(
+                        t.clone(),
+                        "Operands must be two numbers or two strings.",
+                    )),
                 },
                 TokenType::Slash => match (self.visit_expr(left)?, self.visit_expr(right)?) {
                     (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l / r)),
@@ -79,11 +89,11 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
                 Literal::Nil => Ok(Object::Nil),
             },
             Expr::Unary(t, e) => match t.token_type {
+                TokenType::Bang => Ok(Object::Bool(is_truthy(&self.visit_expr(e)?))),
                 TokenType::Minus => match self.visit_expr(e)? {
                     Object::Number(n) => Ok(Object::Number(-n)),
                     _ => Err(RuntimeError::new(t.clone(), "Operand must be a number")),
                 },
-                TokenType::Bang => Ok(Object::Bool(is_truthy(&self.visit_expr(e)?))),
                 _ => Ok(Object::Nil),
             },
         }
@@ -99,6 +109,8 @@ fn is_truthy(obj: &Object) -> bool {
 }
 
 fn is_equal(l_obj: &Object, r_obj: &Object) -> bool {
+    println!("{l_obj}");
+    println!("{r_obj}");
     match (l_obj, r_obj) {
         (Object::Number(l), Object::Number(r)) => l == r,
         (Object::String(l), Object::String(r)) => l == r,
