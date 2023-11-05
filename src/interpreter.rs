@@ -3,7 +3,6 @@ use crate::runtime_error::RuntimeError;
 use crate::token::{Literal, TokenType};
 use std::fmt;
 
-#[derive(Debug)]
 pub enum Object {
     String(String),
     Number(f32),
@@ -12,9 +11,21 @@ pub enum Object {
 }
 
 impl fmt::Display for Object {
-    // todo: format into rlox representations instead of printing rust enums
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
+        match self {
+            Object::Bool(b) => {
+                write!(f, "{:}", b)
+            }
+            Object::String(s) => {
+                write!(f, "{:}", s)
+            }
+            Object::Number(n) => {
+                write!(f, "{:}", n)
+            }
+            Object::Nil => {
+                write!(f, "{:}", "nil")
+            }
+        }
     }
 }
 
@@ -109,8 +120,6 @@ fn is_truthy(obj: &Object) -> bool {
 }
 
 fn is_equal(l_obj: &Object, r_obj: &Object) -> bool {
-    println!("{l_obj}");
-    println!("{r_obj}");
     match (l_obj, r_obj) {
         (Object::Number(l), Object::Number(r)) => l == r,
         (Object::String(l), Object::String(r)) => l == r,
