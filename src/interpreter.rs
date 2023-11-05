@@ -3,6 +3,7 @@ use crate::runtime_error::RuntimeError;
 use crate::token::{Literal, TokenType};
 use std::fmt;
 
+#[derive(Debug)]
 pub enum Object {
     String(String),
     Number(f32),
@@ -25,6 +26,18 @@ impl fmt::Display for Object {
             Object::Nil => {
                 write!(f, "{:}", "nil")
             }
+        }
+    }
+}
+
+impl PartialEq for Object {
+    fn eq(&self, other: &Object) -> bool {
+        match (self, other) {
+            (&Object::Number(l), &Object::Number(r)) => l == r,
+            (Object::String(l), Object::String(r)) => l == r,
+            (Object::Bool(l), Object::Bool(r)) => l == r,
+            (Object::Nil, Object::Nil) => true,
+            (_, _) => false,
         }
     }
 }
@@ -126,5 +139,29 @@ fn is_equal(l_obj: &Object, r_obj: &Object) -> bool {
         (Object::Bool(l), Object::Bool(r)) => l == r,
         (Object::Nil, Object::Nil) => true,
         (_, _) => false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::token::{Token, TokenType};
+
+    #[test]
+    fn unary() {
+        let mut interpretor = Interpretor;
+        let unary_expression = Expr::Unary(
+            Token {
+                token_type: TokenType::Minus,
+                lexeme: String::from("-"),
+                literal: None,
+                line: 0,
+            },
+            Box::new(Expr::Literal(Literal::Number(1.0))),
+        );
+        match interpretor.visit_expr(&unary_expression) {
+            Ok(r) => assert_eq!(r, Object::Number(-1.0)),
+            Err(_) => panic!(),
+        }
     }
 }

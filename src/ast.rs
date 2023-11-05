@@ -79,7 +79,7 @@ mod tests {
 
     #[test]
     fn unary() {
-        let mut ast_printer = AstPrinter {};
+        let mut ast_printer = AstPrinter;
         let unary_expression = Expr::Unary(
             Token {
                 token_type: TokenType::Minus,
@@ -94,7 +94,7 @@ mod tests {
 
     #[test]
     fn binary() {
-        let mut ast_printer = AstPrinter {};
+        let mut ast_printer = AstPrinter;
         let binary_expr = Expr::Binary(
             Box::new(Expr::Literal(Literal::Number(1.0))),
             Token {
@@ -110,7 +110,7 @@ mod tests {
 
     #[test]
     fn grouping() {
-        let mut ast_printer = AstPrinter {};
+        let mut ast_printer = AstPrinter;
         let grouping_expr =
             Expr::Grouping(Box::new(Expr::Literal(Literal::String("hello".into()))));
         assert_eq!(ast_printer.visit_expr(&grouping_expr), "(group hello)");
@@ -118,7 +118,7 @@ mod tests {
 
     #[test]
     fn binary_with_binary() {
-        let mut ast_printer = AstPrinter {};
+        let mut ast_printer = AstPrinter;
         let binary_expr = Expr::Binary(
             Box::new(Expr::Literal(Literal::Number(0.0))),
             Token {
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn end_chapter_test() {
-        let mut ast_printer = AstPrinter {};
+        let mut ast_printer = AstPrinter;
         let expression = Expr::Binary(
             Box::new(Expr::Unary(
                 Token {

@@ -1,6 +1,7 @@
 use crate::report;
 use crate::Token;
 
+#[derive(Debug)]
 pub struct RuntimeError {
     token: Token,
     message: String,
