@@ -1,31 +1,25 @@
-use std::error::Error;
-
 use crate::ast::Expr;
+use crate::error::SyntaxError;
 use crate::token::{Literal, Token, TokenType};
 pub struct Parser<'a> {
-    pub parse_error: Option<Box<dyn Error>>,
     pub tokens: &'a Vec<Token>,
     pub current: usize,
 }
 
 impl<'a> Parser<'a> {
     pub fn new(tokens: &'a Vec<Token>) -> Self {
-        Self {
-            tokens,
-            current: 0,
-            parse_error: None,
-        }
+        Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, &'static str> {
+    pub fn parse(&mut self) -> Result<Expr, SyntaxError> {
         self.expression()
     }
 
-    fn expression(&mut self) -> Result<Expr, &'static str> {
+    fn expression(&mut self) -> Result<Expr, SyntaxError> {
         self.equality()
     }
 
-    fn equality(&mut self) -> Result<Expr, &'static str> {
+    fn equality(&mut self) -> Result<Expr, SyntaxError> {
         let mut expr = self.comparison()?;
 
         while self.matches(&vec![TokenType::BangEqual, TokenType::EqualEqual]) {
@@ -72,11 +66,6 @@ impl<'a> Parser<'a> {
         self.tokens[self.current - 1].clone()
     }
 
-    fn error(&self, token: &Token, message: &str) -> Box<dyn Error> {
-        crate::lox_error(token, message);
-        return Box::new(std::fmt::Error);
-    }
-
     fn synchronize(&mut self) {
         self.advance();
 
@@ -99,7 +88,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn comparison(&mut self) -> Result<Expr, &'static str> {
+    fn comparison(&mut self) -> Result<Expr, SyntaxError> {
         let mut expr = self.term()?;
         while self.matches(&vec![
             TokenType::Greater,
@@ -114,7 +103,7 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
-    fn term(&mut self) -> Result<Expr, &'static str> {
+    fn term(&mut self) -> Result<Expr, SyntaxError> {
         let mut expr = self.factor()?;
         while self.matches(&vec![TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous();
@@ -124,7 +113,7 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
-    fn factor(&mut self) -> Result<Expr, &'static str> {
+    fn factor(&mut self) -> Result<Expr, SyntaxError> {
         let mut expr = self.unary()?;
         while self.matches(&vec![TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
@@ -134,7 +123,7 @@ impl<'a> Parser<'a> {
         Ok(expr)
     }
 
-    fn unary(&mut self) -> Result<Expr, &'static str> {
+    fn unary(&mut self) -> Result<Expr, SyntaxError> {
         if self.matches(&vec![TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let right = self.unary()?;
@@ -143,7 +132,7 @@ impl<'a> Parser<'a> {
         return self.primary();
     }
 
-    fn primary(&mut self) -> Result<Expr, &'static str> {
+    fn primary(&mut self) -> Result<Expr, SyntaxError> {
         if self.matches(&vec![TokenType::False]) {
             return Ok(Expr::Literal(Literal::False));
         }
@@ -160,17 +149,20 @@ impl<'a> Parser<'a> {
         }
         if self.matches(&vec![TokenType::LeftParen]) {
             let expr = self.expression()?;
-            let _ = self.consume(&TokenType::RightParen, &"Expect ')' after expression.");
+            self.consume(&TokenType::RightParen, &"Expect ')' after expression.")?;
             return Ok(Expr::Grouping(Box::new(expr)));
         }
-        return Err(&"Expected expression.");
+        return Err(SyntaxError::new(
+            self.tokens[self.current].clone(),
+            &"Expected expression.",
+        ));
     }
 
-    fn consume(&mut self, token_type: &TokenType, message: &str) -> Result<Token, String> {
+    fn consume(&mut self, token_type: &TokenType, message: &str) -> Result<Token, SyntaxError> {
         if self.check(token_type) == true {
             return Ok(self.advance());
         }
 
-        return Err(self.error(self.peek(), message).to_string());
+        return Err(SyntaxError::new(self.tokens[self.current].clone(), message));
     }
 }

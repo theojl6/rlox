@@ -1,5 +1,5 @@
 use crate::ast::{Expr, Visitor};
-use crate::runtime_error::RuntimeError;
+use crate::error::RuntimeError;
 use crate::token::{Literal, TokenType};
 use std::fmt;
 

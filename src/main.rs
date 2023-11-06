@@ -5,9 +5,9 @@ use std::process;
 use std::usize;
 
 mod ast;
+mod error;
 mod interpreter;
 mod parser;
-mod runtime_error;
 mod scanner;
 mod token;
 use token::Token;
@@ -15,9 +15,9 @@ use token::TokenType;
 
 use crate::ast::AstPrinter;
 use crate::ast::Visitor;
+use crate::error::RuntimeError;
 use crate::interpreter::Interpretor;
 use crate::parser::Parser;
-use crate::runtime_error::RuntimeError;
 use crate::scanner::Scanner;
 
 fn main() {
