@@ -9,6 +9,7 @@ mod error;
 mod interpreter;
 mod parser;
 mod scanner;
+mod stmt;
 mod token;
 use token::Token;
 use token::TokenType;

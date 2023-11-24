@@ -7,10 +7,11 @@ pub enum Expr {
     Grouping(Box<Expr>),
     Literal(Literal),
     Unary(Token, Box<Expr>),
+    Variable(Token),
 }
 
-pub trait Visitor<T> {
-    fn visit_expr(&mut self, e: &Expr) -> T;
+pub trait Visitor<W, T> {
+    fn visit_expr(&mut self, e: &W) -> T;
 }
 
 pub struct AstPrinter;
@@ -32,7 +33,7 @@ impl AstPrinter {
     }
 }
 
-impl Visitor<String> for AstPrinter {
+impl Visitor<Expr, String> for AstPrinter {
     fn visit_expr(&mut self, e: &Expr) -> String {
         let mut ast = String::new();
         match e {
@@ -67,6 +68,7 @@ impl Visitor<String> for AstPrinter {
                 let expr = &self.visit_expr(expr);
                 self.parenthesize(&mut ast, &op.lexeme, vec![expr]);
             }
+            Expr::Variable(_) => todo!(),
         };
         ast
     }

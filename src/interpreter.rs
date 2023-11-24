@@ -50,7 +50,7 @@ impl Interpretor {
     }
 }
 
-impl Visitor<Result<Object, RuntimeError>> for Interpretor {
+impl Visitor<Expr, Result<Object, RuntimeError>> for Interpretor {
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign(_, _) => todo!(),
@@ -120,6 +120,7 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
                 },
                 _ => Ok(Object::Nil),
             },
+            Expr::Variable(_) => todo!(),
         }
     }
 }
