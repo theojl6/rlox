@@ -1,5 +1,6 @@
 use crate::ast::Expr;
 use crate::error::SyntaxError;
+use crate::stmt::Stmt;
 use crate::token::{Literal, Token, TokenType};
 pub struct Parser<'a> {
     pub tokens: &'a Vec<Token>,
@@ -11,12 +12,35 @@ impl<'a> Parser<'a> {
         Self { tokens, current: 0 }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, SyntaxError> {
-        self.expression()
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, SyntaxError> {
+        let mut statements: Vec<Stmt> = Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.statement()?);
+        }
+        Ok(statements)
     }
 
     fn expression(&mut self) -> Result<Expr, SyntaxError> {
         self.equality()
+    }
+
+    fn statement(&mut self) -> Result<Stmt, SyntaxError> {
+        if self.matches(&vec![TokenType::Print]) {
+            return self.print_statement();
+        }
+        return self.expression_statement();
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, SyntaxError> {
+        let value = self.expression()?;
+        self.consume(&TokenType::Semicolon, "Expect ';' after value.")?;
+        Ok(Stmt::Print(value))
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, SyntaxError> {
+        let expr = self.expression()?;
+        self.consume(&TokenType::Semicolon, "Expect ';' after expression.")?;
+        Ok(Stmt::Expression(expr))
     }
 
     fn equality(&mut self) -> Result<Expr, SyntaxError> {

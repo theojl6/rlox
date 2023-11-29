@@ -1,7 +1,4 @@
-use crate::{
-    ast::{Expr, Visitor},
-    token::{Token, TokenType},
-};
+use crate::{ast::Expr, token::Token};
 
 pub enum Stmt {
     Block {
@@ -20,8 +17,8 @@ pub enum Stmt {
     },
     If {
         condition: Expr,
-        thenBranch: Box<Stmt>,
-        elseBranch: Box<Stmt>,
+        then_branch: Box<Stmt>,
+        else_branch: Box<Stmt>,
     },
     Print(Expr),
     Return {
@@ -36,52 +33,4 @@ pub enum Stmt {
         condition: Expr,
         body: Box<Stmt>,
     },
-}
-
-pub struct Statement;
-
-impl Visitor<Stmt, ()> for Statement {
-    fn visit_expr(&mut self, stmt: &Stmt) {
-        match stmt {
-            (_) => {}
-        }
-    }
-}
-
-impl Statement {
-    fn parse(&self) -> Vec<Stmt> {
-        let mut statements: Vec<Stmt> = Vec::new();
-        while (!self.is_at_end()) {
-            statements.push(self.statement());
-        }
-
-        return statements;
-    }
-
-    fn statement(&self) -> Stmt {
-        if (self.matches(TokenType::Print)) {
-            return self.print_statement();
-        }
-        return self.expression_statement();
-    }
-
-    fn print_statement(&self) -> Stmt {
-        let value = self.expression();
-        self.consume(TokenType::Semicolon, "Expect ';' after value.");
-        return Stmt::Print(value);
-    }
-
-    fn expression_statement(&self) -> Stmt {
-        let expr = self.expression();
-        self.consume(TokenType::Semicolon, "Expect ';' after expression.");
-        return Stmt::Expression(expr);
-    }
-
-    fn is_at_end(&self) -> bool {
-        todo!();
-    }
-
-    fn expression(&self) -> Expr {
-        todo!();
-    }
 }
