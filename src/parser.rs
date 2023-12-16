@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
     fn expression_statement(&mut self) -> Result<Stmt, SyntaxError> {
         let expr = self.expression()?;
         self.consume(&TokenType::Semicolon, "Expect ';' after expression.")?;
-        Ok(Stmt::Expression(expr))
+        Ok(Stmt::Expr(expr))
     }
 
     fn equality(&mut self) -> Result<Expr, SyntaxError> {

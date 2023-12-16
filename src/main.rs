@@ -15,7 +15,6 @@ use token::Token;
 use token::TokenType;
 
 use crate::ast::AstPrinter;
-use crate::ast::Visitor;
 use crate::error::RuntimeError;
 use crate::interpreter::Interpretor;
 use crate::parser::Parser;
@@ -65,19 +64,11 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
-    let expr = parser.parse();
-    match expr {
-        Ok(expr) => {
-            let mut ast_printer = AstPrinter;
-            println!("{}", ast_printer.visit_expr(&expr));
+    let stmts = parser.parse();
+    match stmts {
+        Ok(stmts) => {
             let mut interpreter = Interpretor;
-            let value = interpreter.interpret(&expr);
-            match value {
-                Ok(v) => {
-                    println!("{v}")
-                }
-                Err(e) => lox_runtime_error(e, had_runtime_error),
-            }
+            interpreter.interpret(stmts);
         }
         Err(e) => {
             *had_error = true;

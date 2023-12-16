@@ -1,4 +1,7 @@
-use crate::token::{Literal, Token};
+use crate::{
+    stmt::Stmt,
+    token::{Literal, Token},
+};
 
 #[derive(Clone, Debug)]
 pub enum Expr {
@@ -10,8 +13,9 @@ pub enum Expr {
     Variable(Token),
 }
 
-pub trait Visitor<W, T> {
-    fn visit_expr(&mut self, e: &W) -> T;
+pub trait Visitor<T> {
+    fn visit_expr(&mut self, e: &Expr) -> T;
+    fn visit_stmt(&mut self, e: &Stmt) -> T;
 }
 
 pub struct AstPrinter;
@@ -33,7 +37,7 @@ impl AstPrinter {
     }
 }
 
-impl Visitor<Expr, String> for AstPrinter {
+impl Visitor<String> for AstPrinter {
     fn visit_expr(&mut self, e: &Expr) -> String {
         let mut ast = String::new();
         match e {
@@ -71,6 +75,9 @@ impl Visitor<Expr, String> for AstPrinter {
             Expr::Variable(_) => todo!(),
         };
         ast
+    }
+    fn visit_stmt(&mut self, e: &Stmt) -> String {
+        todo!();
     }
 }
 

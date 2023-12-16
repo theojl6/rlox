@@ -9,7 +9,7 @@ pub enum Stmt {
         superclass: Expr,
         methods: Vec<Stmt>,
     },
-    Expression(Expr),
+    Expr(Expr),
     Function {
         name: Token,
         params: Vec<Token>,
