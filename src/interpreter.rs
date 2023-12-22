@@ -126,7 +126,7 @@ impl Interpretor {
     fn visit_stmt(&mut self, s: &Stmt) -> () {
         match s {
             Stmt::Expr(e) => {
-                self.visit_expr(e);
+                let _ = self.visit_expr(e);
             }
             Stmt::Print(e) => {
                 let obj = self.visit_expr(e);

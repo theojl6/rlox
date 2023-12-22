@@ -15,13 +15,34 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Result<Vec<Stmt>, SyntaxError> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.statement()?);
+            statements.push(self.declaration().unwrap());
         }
         Ok(statements)
     }
 
     fn expression(&mut self) -> Result<Expr, SyntaxError> {
         self.equality()
+    }
+
+    fn declaration(&mut self) -> Option<Stmt> {
+        if self.matches(&vec![TokenType::Var]) {
+            let declared_var = self.var_declaration();
+            match declared_var {
+                Ok(s) => return Some(s),
+                Err(e) => {
+                    self.synchronize();
+                    return None;
+                }
+            }
+        }
+        let stmt = self.statement();
+        match stmt {
+            Ok(s) => return Some(s),
+            Err(e) => {
+                self.synchronize();
+                return None;
+            }
+        };
     }
 
     fn statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -35,6 +56,10 @@ impl<'a> Parser<'a> {
         let value = self.expression()?;
         self.consume(&TokenType::Semicolon, "Expect ';' after value.")?;
         Ok(Stmt::Print(value))
+    }
+
+    fn var_declaration(&mut self) -> Result<Stmt, SyntaxError> {
+        todo!();
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, SyntaxError> {
