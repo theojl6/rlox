@@ -1,4 +1,4 @@
-use crate::ast::{Expr, Visitor};
+use crate::ast::Expr;
 use crate::error::RuntimeError;
 use crate::stmt::Stmt;
 use crate::token::{Literal, TokenType};
@@ -48,22 +48,15 @@ pub struct Interpretor;
 impl Interpretor {
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> () {
         for stmt in stmts {
-            <Interpretor as Visitor<()>>::visit_stmt(self, &stmt);
+            self.visit_stmt(&stmt);
         }
     }
-}
-
-impl Visitor<Result<Object, RuntimeError>> for Interpretor {
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign(_, _) => todo!(),
             Expr::Binary(left, t, right) => {
-                let left_obj: Object =
-                    <Interpretor as Visitor<Result<Object, RuntimeError>>>::visit_expr(self, left)?;
-                let right_obj: Object =
-                    <Interpretor as Visitor<Result<Object, RuntimeError>>>::visit_expr(
-                        self, right,
-                    )?;
+                let left_obj: Object = self.visit_expr(left)?;
+                let right_obj: Object = self.visit_expr(right)?;
 
                 return match t.token_type {
                     TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
@@ -108,9 +101,7 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
                 };
             }
 
-            Expr::Grouping(e) => {
-                <Interpretor as Visitor<Result<Object, RuntimeError>>>::visit_expr(self, e)
-            }
+            Expr::Grouping(e) => self.visit_expr(e),
             Expr::Literal(literal) => match literal {
                 Literal::String(val) => Ok(Object::String(val.to_string())),
                 Literal::Number(val) => Ok(Object::Number(*val)),
@@ -119,8 +110,7 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
                 Literal::Nil => Ok(Object::Nil),
             },
             Expr::Unary(t, e) => {
-                let obj: Object =
-                    <Interpretor as Visitor<Result<Object, RuntimeError>>>::visit_expr(self, e)?;
+                let obj: Object = self.visit_expr(e)?;
                 return match t.token_type {
                     TokenType::Bang => Ok(Object::Bool(is_truthy(&obj))),
                     TokenType::Minus => match obj {
@@ -133,19 +123,13 @@ impl Visitor<Result<Object, RuntimeError>> for Interpretor {
             Expr::Variable(_) => todo!(),
         }
     }
-    fn visit_stmt(&mut self, e: &Stmt) -> Result<Object, RuntimeError> {
-        todo!();
-    }
-}
-
-impl Visitor<()> for Interpretor {
-    fn visit_expr(&mut self, e: &Expr) -> () {}
     fn visit_stmt(&mut self, s: &Stmt) -> () {
         match s {
-            Stmt::Expr(e) => self.visit_expr(e),
+            Stmt::Expr(e) => {
+                self.visit_expr(e);
+            }
             Stmt::Print(e) => {
-                let obj =
-                    <Interpretor as Visitor<Result<Object, RuntimeError>>>::visit_expr(self, e);
+                let obj = self.visit_expr(e);
                 match obj {
                     Ok(o) => {
                         println!("{o}");
@@ -153,10 +137,10 @@ impl Visitor<()> for Interpretor {
                     Err(e) => {
                         todo!();
                     }
-                }
+                };
             }
             _ => (),
-        }
+        };
     }
 }
 

@@ -13,11 +13,6 @@ pub enum Expr {
     Variable(Token),
 }
 
-pub trait Visitor<T> {
-    fn visit_expr(&mut self, e: &Expr) -> T;
-    fn visit_stmt(&mut self, e: &Stmt) -> T;
-}
-
 pub struct AstPrinter;
 
 impl AstPrinter {
@@ -37,7 +32,7 @@ impl AstPrinter {
     }
 }
 
-impl Visitor<String> for AstPrinter {
+impl AstPrinter {
     fn visit_expr(&mut self, e: &Expr) -> String {
         let mut ast = String::new();
         match e {
@@ -75,9 +70,6 @@ impl Visitor<String> for AstPrinter {
             Expr::Variable(_) => todo!(),
         };
         ast
-    }
-    fn visit_stmt(&mut self, e: &Stmt) -> String {
-        todo!();
     }
 }
 
