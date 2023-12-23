@@ -68,7 +68,7 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     let stmts = parser.parse();
     match stmts {
         Ok(stmts) => {
-            let mut interpreter = Interpretor;
+            let mut interpreter = Interpretor::new();
             interpreter.interpret(stmts);
         }
         Err(e) => {

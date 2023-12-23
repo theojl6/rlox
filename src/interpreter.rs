@@ -1,10 +1,12 @@
 use crate::ast::Expr;
+use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::stmt::Stmt;
 use crate::token::{Literal, TokenType};
+use std::collections::HashMap;
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Object {
     String(String),
     Number(f32),
@@ -43,20 +45,29 @@ impl PartialEq for Object {
     }
 }
 
-pub struct Interpretor;
+pub struct Interpretor {
+    environment: Environment,
+}
 
 impl Interpretor {
+    pub fn new() -> Self {
+        Interpretor {
+            environment: Environment {
+                values: HashMap::new(),
+            },
+        }
+    }
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> () {
         for stmt in stmts {
-            self.visit_stmt(&stmt);
+            let _ = self.visit_stmt(&stmt);
         }
     }
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign(_, _) => todo!(),
             Expr::Binary(left, t, right) => {
-                let left_obj: Object = self.visit_expr(left)?;
-                let right_obj: Object = self.visit_expr(right)?;
+                let left_obj = self.visit_expr(left)?;
+                let right_obj = self.visit_expr(right)?;
 
                 match t.token_type {
                     TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
@@ -120,27 +131,34 @@ impl Interpretor {
                     _ => Ok(Object::Nil),
                 }
             }
-            Expr::Variable(_) => todo!(),
+            Expr::Variable(t) => {
+                let value = self.environment.get(t.clone())?;
+                Ok(value.clone())
+            }
         }
     }
-    fn visit_stmt(&mut self, s: &Stmt) -> () {
+    fn visit_stmt(&mut self, s: &Stmt) -> Result<(), RuntimeError> {
         match s {
             Stmt::Expr(e) => {
-                let _ = self.visit_expr(e);
+                let _ = self.visit_expr(e)?;
             }
             Stmt::Print(e) => {
-                let obj = self.visit_expr(e);
-                match obj {
-                    Ok(o) => {
-                        println!("{o}");
-                    }
-                    Err(e) => {
-                        todo!();
-                    }
-                };
+                let obj = self.visit_expr(e)?;
+                println!("{obj}");
             }
-            _ => (),
+            Stmt::Var { name, initializer } => {
+                let mut value = Object::Nil;
+                match initializer {
+                    Some(i) => {
+                        value = self.visit_expr(i)?;
+                    }
+                    None => {}
+                }
+                self.environment.define(name.lexeme.clone(), value);
+            }
+            _ => {}
         };
+        Ok(())
     }
 }
 
@@ -169,7 +187,7 @@ mod tests {
 
     #[test]
     fn unary() {
-        let mut interpretor = Interpretor;
+        let mut interpretor = Interpretor::new();
         let unary_expression = Expr::Unary(
             Token {
                 token_type: TokenType::Minus,
