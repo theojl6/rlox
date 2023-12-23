@@ -3,8 +3,9 @@ use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::stmt::Stmt;
 use crate::token::{Literal, TokenType};
-use std::collections::HashMap;
+use std::cell::RefCell;
 use std::fmt;
+use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -46,15 +47,13 @@ impl PartialEq for Object {
 }
 
 pub struct Interpretor {
-    environment: Environment,
+    environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpretor {
     pub fn new() -> Self {
         Interpretor {
-            environment: Environment {
-                values: HashMap::new(),
-            },
+            environment: Rc::new(RefCell::new(Environment::new(None))),
         }
     }
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> () {
@@ -62,12 +61,20 @@ impl Interpretor {
             let _ = self.visit_stmt(&stmt);
         }
     }
+    fn interpret_block(&mut self, stmts: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) {
+        let previous = self.environment.clone();
+        self.environment = environment;
+        for stmt in stmts {
+            let _ = self.visit_stmt(&stmt);
+        }
+        self.environment = previous;
+    }
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign(t, e) => {
                 let value = self.visit_expr(e)?;
                 let v = value.clone();
-                self.environment.assign(t.clone(), v)?;
+                self.environment.borrow_mut().assign(t.clone(), v)?;
                 return Ok(value);
             }
             Expr::Binary(left, t, right) => {
@@ -137,7 +144,7 @@ impl Interpretor {
                 }
             }
             Expr::Variable(t) => {
-                let value = self.environment.get(t.clone())?;
+                let value = self.environment.borrow().get(t.clone())?;
                 Ok(value.clone())
             }
         }
@@ -159,8 +166,19 @@ impl Interpretor {
                     }
                     None => {}
                 }
-                self.environment.define(name.lexeme.clone(), value);
+                self.environment
+                    .borrow_mut()
+                    .define(name.lexeme.clone(), value);
             }
+            Stmt::Block { statements } => {
+                self.interpret_block(
+                    statements,
+                    Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
+                        &(self.environment),
+                    ))))),
+                );
+            }
+
             _ => {}
         };
         Ok(())

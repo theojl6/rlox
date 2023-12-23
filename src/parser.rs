@@ -76,6 +76,11 @@ impl<'a> Parser<'a> {
         if self.matches(&vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.matches(&vec![TokenType::LeftBrace]) {
+            return Ok(Stmt::Block {
+                statements: self.block()?,
+            });
+        }
         return self.expression_statement();
     }
 
@@ -102,6 +107,18 @@ impl<'a> Parser<'a> {
         let expr = self.expression()?;
         self.consume(&TokenType::Semicolon, "Expect ';' after expression.")?;
         Ok(Stmt::Expr(expr))
+    }
+
+    fn block(&mut self) -> Result<Vec<Stmt>, SyntaxError> {
+        let mut statements = Vec::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            match self.declaration() {
+                Some(d) => statements.push(d),
+                None => {}
+            }
+        }
+        self.consume(&TokenType::RightBrace, "Expect '}' after block.")?;
+        return Ok(statements);
     }
 
     fn equality(&mut self) -> Result<Expr, SyntaxError> {
@@ -152,7 +169,6 @@ impl<'a> Parser<'a> {
     }
 
     fn synchronize(&mut self) {
-        println!("synchronized");
         self.advance();
 
         while !self.is_at_end() {
