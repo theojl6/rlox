@@ -27,9 +27,30 @@ impl<'a> Parser<'a> {
     }
 
     fn expression(&mut self) -> Result<Expr, SyntaxError> {
-        self.equality()
+        self.assignment()
     }
 
+    fn assignment(&mut self) -> Result<Expr, SyntaxError> {
+        let expr = self.equality()?;
+        if self.matches(&vec![TokenType::Equal]) {
+            let equals = self.previous();
+            let value = self.assignment()?;
+            let v = value.clone();
+
+            match expr {
+                Expr::Variable(t) => {
+                    return Ok(Expr::Assign(t.clone(), Box::new(v)));
+                }
+                _ => {
+                    return Err(SyntaxError::new(
+                        equals.clone(),
+                        "Invalid assignment target.",
+                    ));
+                }
+            }
+        }
+        Ok(expr)
+    }
     fn declaration(&mut self) -> Option<Stmt> {
         if self.matches(&vec![TokenType::Var]) {
             let declared_var = self.var_declaration();
@@ -131,6 +152,7 @@ impl<'a> Parser<'a> {
     }
 
     fn synchronize(&mut self) {
+        println!("synchronized");
         self.advance();
 
         while !self.is_at_end() {

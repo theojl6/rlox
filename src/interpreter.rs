@@ -64,7 +64,12 @@ impl Interpretor {
     }
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
-            Expr::Assign(_, _) => todo!(),
+            Expr::Assign(t, e) => {
+                let value = self.visit_expr(e)?;
+                let v = value.clone();
+                self.environment.assign(t.clone(), v)?;
+                return Ok(value);
+            }
             Expr::Binary(left, t, right) => {
                 let left_obj = self.visit_expr(left)?;
                 let right_obj = self.visit_expr(right)?;
@@ -183,7 +188,7 @@ fn is_equal(l_obj: &Object, r_obj: &Object) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::{Token, TokenType};
+    use crate::token::{self, Token, TokenType};
 
     #[test]
     fn unary() {
@@ -201,5 +206,19 @@ mod tests {
             Ok(r) => assert_eq!(r, Object::Number(-1.0)),
             Err(_) => panic!(),
         }
+    }
+
+    #[test]
+    fn assignment() {
+        let mut interpretor = Interpretor::new();
+        let assignment_expression = Expr::Assign(
+            Token {
+                token_type: TokenType::Identifier,
+                lexeme: String::from("a"),
+                literal: None,
+                line: 0,
+            },
+            Box::new(Expr::Literal(Literal::Number(1.0))),
+        );
     }
 }

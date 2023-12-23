@@ -20,6 +20,17 @@ impl Environment {
         }
     }
 
+    pub fn assign(&mut self, name: Token, value: Object) -> Result<(), RuntimeError> {
+        if self.values.contains_key(&name.lexeme) {
+            self.values.insert(name.lexeme, value);
+            return Ok(());
+        }
+        return Err(RuntimeError::new(
+            name.clone(),
+            &("Undefined variable '".to_owned() + &name.lexeme + "'."),
+        ));
+    }
+
     pub fn define(&mut self, name: String, value: Object) -> () {
         self.values.insert(name, value);
     }
