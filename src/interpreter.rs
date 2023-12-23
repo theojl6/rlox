@@ -58,7 +58,7 @@ impl Interpretor {
                 let left_obj: Object = self.visit_expr(left)?;
                 let right_obj: Object = self.visit_expr(right)?;
 
-                return match t.token_type {
+                match t.token_type {
                     TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
                     TokenType::EqualEqual => Ok(Object::Bool(is_equal(&left_obj, &right_obj))),
                     TokenType::Greater => match (left_obj, right_obj) {
@@ -98,7 +98,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
                     },
                     _ => Ok(Object::Nil),
-                };
+                }
             }
 
             Expr::Grouping(e) => self.visit_expr(e),
@@ -111,14 +111,14 @@ impl Interpretor {
             },
             Expr::Unary(t, e) => {
                 let obj: Object = self.visit_expr(e)?;
-                return match t.token_type {
+                match t.token_type {
                     TokenType::Bang => Ok(Object::Bool(is_truthy(&obj))),
                     TokenType::Minus => match obj {
                         Object::Number(n) => Ok(Object::Number(-n)),
                         _ => Err(RuntimeError::new(t.clone(), "Operand must be a number")),
                     },
                     _ => Ok(Object::Nil),
-                };
+                }
             }
             Expr::Variable(_) => todo!(),
         }

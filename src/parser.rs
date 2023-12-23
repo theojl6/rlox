@@ -15,7 +15,13 @@ impl<'a> Parser<'a> {
     pub fn parse(&mut self) -> Result<Vec<Stmt>, SyntaxError> {
         let mut statements: Vec<Stmt> = Vec::new();
         while !self.is_at_end() {
-            statements.push(self.declaration().unwrap());
+            let declaration = self.declaration();
+            match declaration {
+                Some(d) => {
+                    statements.push(d);
+                }
+                None => {}
+            }
         }
         Ok(statements)
     }
@@ -59,7 +65,16 @@ impl<'a> Parser<'a> {
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, SyntaxError> {
-        todo!();
+        let name = self.consume(&TokenType::Identifier, "Expect variable name.")?;
+        let mut initializer = None;
+        if self.matches(&vec![TokenType::Equal]) {
+            initializer = Some(self.expression()?);
+        }
+        self.consume(
+            &TokenType::Semicolon,
+            "Expect ';' after variable declaration",
+        )?;
+        return Ok(Stmt::Var { name, initializer });
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -196,6 +211,10 @@ impl<'a> Parser<'a> {
                 self.previous().literal.expect("No literal found in token"),
             ));
         }
+        if self.matches(&vec![TokenType::Identifier]) {
+            return Ok(Expr::Variable(self.previous()));
+        }
+
         if self.matches(&vec![TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(&TokenType::RightParen, &"Expect ')' after expression.")?;
