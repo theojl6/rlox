@@ -73,6 +73,9 @@ impl<'a> Parser<'a> {
     }
 
     fn statement(&mut self) -> Result<Stmt, SyntaxError> {
+        if self.matches(&vec![TokenType::If]) {
+            return self.if_statement();
+        }
         if self.matches(&vec![TokenType::Print]) {
             return self.print_statement();
         }
@@ -82,6 +85,24 @@ impl<'a> Parser<'a> {
             });
         }
         return self.expression_statement();
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, SyntaxError> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'if'.")?;
+        let condition = self.expression()?;
+        self.consume(&TokenType::RightParen, "Expect ')' after if condition.")?;
+
+        let then_branch = Box::new(self.statement()?);
+        let mut else_branch = None;
+
+        if self.matches(&vec![TokenType::Else]) {
+            else_branch = Some(Box::new(self.statement()?));
+        }
+        return Ok(Stmt::If {
+            condition,
+            then_branch,
+            else_branch,
+        });
     }
 
     fn print_statement(&mut self) -> Result<Stmt, SyntaxError> {

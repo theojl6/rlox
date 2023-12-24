@@ -154,6 +154,22 @@ impl Interpretor {
             Stmt::Expr(e) => {
                 let _ = self.visit_expr(e)?;
             }
+            Stmt::If {
+                condition,
+                then_branch,
+                else_branch,
+            } => {
+                if is_truthy(&self.visit_expr(condition)?) {
+                    self.visit_stmt(&then_branch)?;
+                } else {
+                    match else_branch {
+                        Some(s) => {
+                            self.visit_stmt(s)?;
+                        }
+                        None => {}
+                    }
+                }
+            }
             Stmt::Print(e) => {
                 let obj = self.visit_expr(e)?;
                 println!("{obj}");
