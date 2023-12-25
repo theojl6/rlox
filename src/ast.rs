@@ -1,14 +1,11 @@
-use crate::{
-    stmt::Stmt,
-    token::{Literal, Token},
-};
+use crate::{interpreter::Object, stmt::Stmt, token::Token};
 
 #[derive(Clone, Debug)]
 pub enum Expr {
     Assign(Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),
-    Literal(Literal),
+    Literal(Object),
     Unary(Token, Box<Expr>),
     Variable(Token),
 }
@@ -46,20 +43,17 @@ impl AstPrinter {
                 let expr = &self.visit_expr(expr);
                 self.parenthesize(&mut ast, &"group", vec![expr]);
             }
-            Expr::Literal(literal) => match literal {
-                Literal::String(val) => {
+            Expr::Literal(o) => match o {
+                Object::String(val) => {
                     ast.push_str(val);
                 }
-                Literal::Number(val) => {
+                Object::Number(val) => {
                     ast.push_str(&val.to_string());
                 }
-                Literal::True => {
-                    ast.push_str(&"true");
+                Object::Bool(b) => {
+                    ast.push_str(&b.to_string());
                 }
-                Literal::False => {
-                    ast.push_str(&"false");
-                }
-                Literal::Nil => {
+                Object::Nil => {
                     ast.push_str(&"nil");
                 }
             },
@@ -88,7 +82,7 @@ mod tests {
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Literal::Number(0.0))),
+            Box::new(Expr::Literal(Object::Number(0.0))),
         );
         assert_eq!(ast_printer.visit_expr(&unary_expression), "(- 0)")
     }
@@ -97,14 +91,14 @@ mod tests {
     fn binary() {
         let mut ast_printer = AstPrinter;
         let binary_expr = Expr::Binary(
-            Box::new(Expr::Literal(Literal::Number(1.0))),
+            Box::new(Expr::Literal(Object::Number(1.0))),
             Token {
                 token_type: TokenType::Plus,
                 lexeme: String::from("+"),
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Literal::Number(1.0))),
+            Box::new(Expr::Literal(Object::Number(1.0))),
         );
         assert_eq!(ast_printer.visit_expr(&binary_expr), "(+ 1 1)")
     }
@@ -112,8 +106,7 @@ mod tests {
     #[test]
     fn grouping() {
         let mut ast_printer = AstPrinter;
-        let grouping_expr =
-            Expr::Grouping(Box::new(Expr::Literal(Literal::String("hello".into()))));
+        let grouping_expr = Expr::Grouping(Box::new(Expr::Literal(Object::String("hello".into()))));
         assert_eq!(ast_printer.visit_expr(&grouping_expr), "(group hello)");
     }
 
@@ -121,17 +114,17 @@ mod tests {
     fn binary_with_binary() {
         let mut ast_printer = AstPrinter;
         let binary_expr = Expr::Binary(
-            Box::new(Expr::Literal(Literal::Number(0.0))),
+            Box::new(Expr::Literal(Object::Number(0.0))),
             Token {
                 token_type: TokenType::Plus,
                 lexeme: String::from("+"),
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Literal::Number(1.0))),
+            Box::new(Expr::Literal(Object::Number(1.0))),
         );
         let binary_expr_with_binary_expr = Expr::Binary(
-            Box::new(Expr::Literal(Literal::Number(0.0))),
+            Box::new(Expr::Literal(Object::Number(0.0))),
             Token {
                 token_type: TokenType::Plus,
                 lexeme: String::from("-"),
@@ -158,7 +151,7 @@ mod tests {
                     literal: None,
                     line: 0,
                 },
-                Box::new(Expr::Literal(Literal::Number(123.0))),
+                Box::new(Expr::Literal(Object::Number(123.0))),
             )),
             Token {
                 token_type: TokenType::Star,
@@ -166,7 +159,7 @@ mod tests {
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Grouping(Box::new(Expr::Literal(Literal::Number(
+            Box::new(Expr::Grouping(Box::new(Expr::Literal(Object::Number(
                 45.67,
             ))))),
         );

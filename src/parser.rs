@@ -1,7 +1,8 @@
 use crate::ast::Expr;
 use crate::error::SyntaxError;
+use crate::interpreter::Object;
 use crate::stmt::Stmt;
-use crate::token::{Literal, Token, TokenType};
+use crate::token::{Token, TokenType};
 pub struct Parser<'a> {
     pub tokens: &'a Vec<Token>,
     pub current: usize,
@@ -257,13 +258,13 @@ impl<'a> Parser<'a> {
 
     fn primary(&mut self) -> Result<Expr, SyntaxError> {
         if self.matches(&vec![TokenType::False]) {
-            return Ok(Expr::Literal(Literal::False));
+            return Ok(Expr::Literal(Object::Bool(false)));
         }
         if self.matches(&vec![TokenType::True]) {
-            return Ok(Expr::Literal(Literal::True));
+            return Ok(Expr::Literal(Object::Bool(true)));
         }
         if self.matches(&vec![TokenType::Nil]) {
-            return Ok(Expr::Literal(Literal::Nil));
+            return Ok(Expr::Literal(Object::Nil));
         }
         if self.matches(&vec![TokenType::Number, TokenType::String]) {
             return Ok(Expr::Literal(

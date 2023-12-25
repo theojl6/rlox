@@ -2,7 +2,7 @@ use crate::ast::Expr;
 use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::stmt::Stmt;
-use crate::token::{Literal, TokenType};
+use crate::token::TokenType;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -125,13 +125,7 @@ impl Interpretor {
             }
 
             Expr::Grouping(e) => self.visit_expr(e),
-            Expr::Literal(literal) => match literal {
-                Literal::String(val) => Ok(Object::String(val.to_string())),
-                Literal::Number(val) => Ok(Object::Number(*val)),
-                Literal::True => Ok(Object::Bool(true)),
-                Literal::False => Ok(Object::Bool(false)),
-                Literal::Nil => Ok(Object::Nil),
-            },
+            Expr::Literal(o) => Ok(o.clone()),
             Expr::Unary(t, e) => {
                 let obj: Object = self.visit_expr(e)?;
                 match t.token_type {
@@ -234,7 +228,7 @@ mod tests {
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Literal::Number(1.0))),
+            Box::new(Expr::Literal(Object::Number(1.0))),
         );
         match interpretor.visit_expr(&unary_expression) {
             Ok(r) => assert_eq!(r, Object::Number(-1.0)),
@@ -252,7 +246,7 @@ mod tests {
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Literal::Number(1.0))),
+            Box::new(Expr::Literal(Object::Number(1.0))),
         );
     }
 }

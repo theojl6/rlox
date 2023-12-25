@@ -1,5 +1,6 @@
 use crate::error;
-use crate::token::{Literal, Token, TokenType};
+use crate::interpreter::Object;
+use crate::token::{Token, TokenType};
 
 pub struct Scanner {
     pub source: String,
@@ -128,7 +129,7 @@ impl Scanner {
         });
     }
 
-    fn add_token_with_literal(&mut self, token_type: TokenType, literal: Option<Literal>) {
+    fn add_token_with_literal(&mut self, token_type: TokenType, literal: Option<Object>) {
         let text = &self.source[self.start..self.current];
         self.tokens.push(Token {
             token_type,
@@ -178,7 +179,7 @@ impl Scanner {
         // Trim the surrounding quotes.
         self.add_token_with_literal(
             TokenType::String,
-            Some(Literal::String(String::from(
+            Some(Object::String(String::from(
                 &self.source[self.start + 1..self.current - 1],
             ))),
         )
@@ -199,7 +200,7 @@ impl Scanner {
 
         self.add_token_with_literal(
             TokenType::Number,
-            Some(Literal::Number(
+            Some(Object::Number(
                 self.source[self.start..self.current].parse().unwrap(),
             )),
         )
