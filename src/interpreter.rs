@@ -126,6 +126,21 @@ impl Interpretor {
 
             Expr::Grouping(e) => self.visit_expr(e),
             Expr::Literal(o) => Ok(o.clone()),
+            Expr::Logical(left, operator, right) => {
+                let left = self.visit_expr(left)?;
+
+                if operator.token_type == TokenType::Or {
+                    if is_truthy(&left) {
+                        return Ok(left);
+                    }
+                } else {
+                    if !is_truthy(&left) {
+                        return Ok(left);
+                    }
+                }
+                self.visit_expr(right)
+            }
+
             Expr::Unary(t, e) => {
                 let obj: Object = self.visit_expr(e)?;
                 match t.token_type {

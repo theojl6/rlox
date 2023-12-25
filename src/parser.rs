@@ -32,7 +32,7 @@ impl<'a> Parser<'a> {
     }
 
     fn assignment(&mut self) -> Result<Expr, SyntaxError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
         if self.matches(&vec![TokenType::Equal]) {
             let equals = self.previous();
             let value = self.assignment()?;
@@ -52,6 +52,29 @@ impl<'a> Parser<'a> {
         }
         Ok(expr)
     }
+
+    fn or(&mut self) -> Result<Expr, SyntaxError> {
+        let mut expr = self.and()?;
+
+        while self.matches(&vec![TokenType::Or]) {
+            let operator = self.previous();
+            let right = self.and()?;
+            expr = Expr::Logical(Box::new(expr), operator, Box::new(right));
+        }
+        return Ok(expr);
+    }
+
+    fn and(&mut self) -> Result<Expr, SyntaxError> {
+        let mut expr = self.equality()?;
+
+        while self.matches(&vec![TokenType::And]) {
+            let operator = self.previous();
+            let right = self.equality()?;
+            expr = Expr::Logical(Box::new(expr), operator, Box::new(right));
+        }
+        return Ok(expr);
+    }
+
     fn declaration(&mut self) -> Option<Stmt> {
         if self.matches(&vec![TokenType::Var]) {
             let declared_var = self.var_declaration();

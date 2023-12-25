@@ -6,6 +6,7 @@ pub enum Expr {
     Binary(Box<Expr>, Token, Box<Expr>),
     Grouping(Box<Expr>),
     Literal(Object),
+    Logical(Box<Expr>, Token, Box<Expr>),
     Unary(Token, Box<Expr>),
     Variable(Token),
 }
@@ -57,6 +58,7 @@ impl AstPrinter {
                     ast.push_str(&"nil");
                 }
             },
+            Expr::Logical(..) => todo!(),
             Expr::Unary(op, expr) => {
                 let expr = &self.visit_expr(expr);
                 self.parenthesize(&mut ast, &op.lexeme, vec![expr]);
