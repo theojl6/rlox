@@ -103,6 +103,9 @@ impl<'a> Parser<'a> {
         if self.matches(&vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.matches(&vec![TokenType::While]) {
+            return self.while_statement();
+        }
         if self.matches(&vec![TokenType::LeftBrace]) {
             return Ok(Stmt::Block {
                 statements: self.block()?,
@@ -146,6 +149,17 @@ impl<'a> Parser<'a> {
             "Expect ';' after variable declaration",
         )?;
         return Ok(Stmt::Var { name, initializer });
+    }
+
+    fn while_statement(&mut self) -> Result<Stmt, SyntaxError> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'while'.")?;
+        let condition = self.expression()?;
+        self.consume(&TokenType::RightParen, "Expect ')' after condition.")?;
+        let body = self.statement()?;
+        return Ok(Stmt::While {
+            condition,
+            body: Box::new(body),
+        });
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, SyntaxError> {

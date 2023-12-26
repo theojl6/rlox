@@ -203,6 +203,11 @@ impl Interpretor {
                     ))))),
                 );
             }
+            Stmt::While { condition, body } => {
+                while is_truthy(&self.visit_expr(condition)?) {
+                    self.visit_stmt(body)?;
+                }
+            }
 
             _ => {}
         };
