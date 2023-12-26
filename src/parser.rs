@@ -80,7 +80,7 @@ impl<'a> Parser<'a> {
             let declared_var = self.var_declaration();
             match declared_var {
                 Ok(s) => return Some(s),
-                Err(e) => {
+                Err(_) => {
                     self.synchronize();
                     return None;
                 }
@@ -89,7 +89,7 @@ impl<'a> Parser<'a> {
         let stmt = self.statement();
         match stmt {
             Ok(s) => return Some(s),
-            Err(e) => {
+            Err(_) => {
                 self.synchronize();
                 return None;
             }
@@ -99,6 +99,9 @@ impl<'a> Parser<'a> {
     fn statement(&mut self) -> Result<Stmt, SyntaxError> {
         if self.matches(&vec![TokenType::If]) {
             return self.if_statement();
+        }
+        if self.matches(&vec![TokenType::For]) {
+            return self.for_statement();
         }
         if self.matches(&vec![TokenType::Print]) {
             return self.print_statement();
@@ -112,6 +115,67 @@ impl<'a> Parser<'a> {
             });
         }
         return self.expression_statement();
+    }
+
+    fn for_statement(&mut self) -> Result<Stmt, SyntaxError> {
+        self.consume(&TokenType::LeftParen, "Expect '(' after 'for'.")?;
+
+        let initializer;
+        if self.matches(&vec![TokenType::Semicolon]) {
+            initializer = None;
+        } else if self.matches(&vec![TokenType::Var]) {
+            initializer = Some(self.var_declaration()?);
+        } else {
+            initializer = Some(self.expression_statement()?);
+        }
+
+        let mut condition = None;
+        if !self.check(&TokenType::Semicolon) {
+            condition = Some(self.expression()?);
+        }
+        self.consume(&TokenType::Semicolon, "Expect ';' after loop condition.")?;
+
+        let mut increment = None;
+        if !self.check(&TokenType::RightParen) {
+            increment = Some(self.expression()?);
+        }
+        self.consume(&TokenType::RightParen, "Expect ')' after for clauses.")?;
+
+        let mut body = self.statement()?;
+
+        match increment {
+            Some(i) => {
+                body = Stmt::Block {
+                    statements: vec![body, Stmt::Expr(i)],
+                }
+            }
+            None => {}
+        }
+
+        if condition.is_none() {
+            condition = Some(Expr::Literal(Object::Bool(true)));
+        }
+
+        match condition {
+            Some(c) => {
+                body = Stmt::While {
+                    condition: c,
+                    body: Box::new(body),
+                }
+            }
+            None => {}
+        }
+
+        match initializer {
+            Some(i) => {
+                body = Stmt::Block {
+                    statements: vec![i, body],
+                }
+            }
+            None => {}
+        }
+
+        return Ok(body);
     }
 
     fn if_statement(&mut self) -> Result<Stmt, SyntaxError> {
