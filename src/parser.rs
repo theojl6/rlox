@@ -386,7 +386,36 @@ impl<'a> Parser<'a> {
                 right: Box::new(right),
             });
         }
-        return self.primary();
+        return self.call();
+    }
+
+    fn finish_call(&mut self, callee: &Expr) -> Result<Expr, SyntaxError> {
+        let mut arguments = vec![];
+        if !self.check(&TokenType::RightParen) {
+            while self.matches(&vec![TokenType::Comma]) {
+                let expression = Box::new(self.expression()?);
+                arguments.push(expression);
+            }
+        }
+        let paren = self.consume(&TokenType::RightParen, "Expect ')' after arguments.")?;
+
+        Ok(Expr::Call {
+            callee: Box::new(callee.clone()),
+            paren,
+            arguments,
+        })
+    }
+
+    fn call(&mut self) -> Result<Expr, SyntaxError> {
+        let mut expr = self.primary()?;
+        loop {
+            if self.matches(&vec![TokenType::LeftParen]) {
+                expr = self.finish_call(&expr)?;
+            } else {
+                break;
+            }
+        }
+        Ok(expr)
     }
 
     fn primary(&mut self) -> Result<Expr, SyntaxError> {

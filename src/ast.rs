@@ -11,11 +11,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
-    // Call {
-    //     callee: Box<Expr>,
-    //     paren: Token,
-    //     arguments: Vec<Box<Expr>>,
-    // },
+    Call {
+        callee: Box<Expr>,
+        paren: Token,
+        arguments: Vec<Box<Expr>>,
+    },
     Grouping {
         expression: Box<Expr>,
     },
@@ -69,6 +69,7 @@ impl AstPrinter {
                 let right_expr = &self.visit_expr(right);
                 self.parenthesize(&mut ast, &operator.lexeme, vec![left_expr, right_expr]);
             }
+            Expr::Call { .. } => todo!(),
             Expr::Grouping { expression } => {
                 let expr = &self.visit_expr(expression);
                 self.parenthesize(&mut ast, &"group", vec![expr]);

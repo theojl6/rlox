@@ -148,6 +148,7 @@ impl Interpretor {
                     _ => Ok(Object::Nil),
                 }
             }
+            Expr::Call { .. } => todo!(),
 
             Expr::Grouping { expression } => self.visit_expr(expression),
             Expr::Literal { value } => Ok(value.clone()),
