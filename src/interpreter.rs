@@ -71,62 +71,91 @@ impl Interpretor {
     }
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
-            Expr::Assign(t, e) => {
-                let value = self.visit_expr(e)?;
+            Expr::Assign { name, value } => {
+                let value = self.visit_expr(value)?;
                 let v = value.clone();
-                self.environment.borrow_mut().assign(t.clone(), v)?;
+                self.environment.borrow_mut().assign(name.clone(), v)?;
                 return Ok(value);
             }
-            Expr::Binary(left, t, right) => {
+            Expr::Binary {
+                left,
+                operator,
+                right,
+            } => {
                 let left_obj = self.visit_expr(left)?;
                 let right_obj = self.visit_expr(right)?;
 
-                match t.token_type {
+                match operator.token_type {
                     TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
                     TokenType::EqualEqual => Ok(Object::Bool(is_equal(&left_obj, &right_obj))),
                     TokenType::Greater => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l > r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     TokenType::GreaterEqual => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l >= r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     TokenType::Less => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l < r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     TokenType::LessEqual => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l <= r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     TokenType::Minus => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l - r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     TokenType::Plus => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l + r)),
                         (Object::String(l), Object::String(r)) => Ok(Object::String(l + &r)),
                         (_, _) => Err(RuntimeError::new(
-                            t.clone(),
+                            operator.clone(),
                             "Operands must be two numbers or two strings.",
                         )),
                     },
                     TokenType::Slash => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l / r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     TokenType::Star => match (left_obj, right_obj) {
                         (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l * r)),
-                        (_, _) => Err(RuntimeError::new(t.clone(), "Operands must be numbers.")),
+                        (_, _) => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operands must be numbers.",
+                        )),
                     },
                     _ => Ok(Object::Nil),
                 }
             }
 
-            Expr::Grouping(e) => self.visit_expr(e),
-            Expr::Literal(o) => Ok(o.clone()),
-            Expr::Logical(left, operator, right) => {
+            Expr::Grouping { expression } => self.visit_expr(expression),
+            Expr::Literal { value } => Ok(value.clone()),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
                 let left = self.visit_expr(left)?;
 
                 if operator.token_type == TokenType::Or {
@@ -141,19 +170,22 @@ impl Interpretor {
                 self.visit_expr(right)
             }
 
-            Expr::Unary(t, e) => {
+            Expr::Unary { operator, right } => {
                 let obj: Object = self.visit_expr(e)?;
-                match t.token_type {
+                match operator.token_type {
                     TokenType::Bang => Ok(Object::Bool(is_truthy(&obj))),
                     TokenType::Minus => match obj {
                         Object::Number(n) => Ok(Object::Number(-n)),
-                        _ => Err(RuntimeError::new(t.clone(), "Operand must be a number")),
+                        _ => Err(RuntimeError::new(
+                            operator.clone(),
+                            "Operand must be a number",
+                        )),
                     },
                     _ => Ok(Object::Nil),
                 }
             }
-            Expr::Variable(t) => {
-                let value = self.environment.borrow().get(t.clone())?;
+            Expr::Variable { name } => {
+                let value = self.environment.borrow().get(name.clone())?;
                 Ok(value.clone())
             }
         }
@@ -241,15 +273,17 @@ mod tests {
     #[test]
     fn unary() {
         let mut interpretor = Interpretor::new();
-        let unary_expression = Expr::Unary(
-            Token {
+        let unary_expression = Expr::Unary {
+            operator: Token {
                 token_type: TokenType::Minus,
                 lexeme: String::from("-"),
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Object::Number(1.0))),
-        );
+            right: Box::new(Expr::Literal {
+                value: Object::Number(1.0),
+            }),
+        };
         match interpretor.visit_expr(&unary_expression) {
             Ok(r) => assert_eq!(r, Object::Number(-1.0)),
             Err(_) => panic!(),
@@ -259,14 +293,16 @@ mod tests {
     #[test]
     fn assignment() {
         let mut interpretor = Interpretor::new();
-        let assignment_expression = Expr::Assign(
-            Token {
+        let assignment_expression = Expr::Assign {
+            name: Token {
                 token_type: TokenType::Identifier,
                 lexeme: String::from("a"),
                 literal: None,
                 line: 0,
             },
-            Box::new(Expr::Literal(Object::Number(1.0))),
-        );
+            value: Box::new(Expr::Literal {
+                value: Object::Number(1.0),
+            }),
+        };
     }
 }

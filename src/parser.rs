@@ -39,8 +39,11 @@ impl<'a> Parser<'a> {
             let v = value.clone();
 
             match expr {
-                Expr::Variable(t) => {
-                    return Ok(Expr::Assign(t.clone(), Box::new(v)));
+                Expr::Variable { name } => {
+                    return Ok(Expr::Assign {
+                        name: name.clone(),
+                        value: Box::new(v),
+                    });
                 }
                 _ => {
                     return Err(SyntaxError::new(
@@ -59,7 +62,11 @@ impl<'a> Parser<'a> {
         while self.matches(&vec![TokenType::Or]) {
             let operator = self.previous();
             let right = self.and()?;
-            expr = Expr::Logical(Box::new(expr), operator, Box::new(right));
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
         }
         return Ok(expr);
     }
@@ -70,7 +77,11 @@ impl<'a> Parser<'a> {
         while self.matches(&vec![TokenType::And]) {
             let operator = self.previous();
             let right = self.equality()?;
-            expr = Expr::Logical(Box::new(expr), operator, Box::new(right));
+            expr = Expr::Logical {
+                left: Box::new(expr),
+                operator,
+                right: Box::new(right),
+            };
         }
         return Ok(expr);
     }
@@ -153,7 +164,9 @@ impl<'a> Parser<'a> {
         }
 
         if condition.is_none() {
-            condition = Some(Expr::Literal(Object::Bool(true)));
+            condition = Some(Expr::Literal {
+                value: Object::Bool(true),
+            });
         }
 
         match condition {
@@ -250,7 +263,11 @@ impl<'a> Parser<'a> {
         while self.matches(&vec![TokenType::BangEqual, TokenType::EqualEqual]) {
             let operator = self.previous();
             let right = self.comparison()?;
-            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: operator.clone(),
+                right: Box::new(right),
+            };
         }
         Ok(expr)
     }
@@ -323,7 +340,11 @@ impl<'a> Parser<'a> {
         ]) {
             let operator = self.previous();
             let right = self.term()?;
-            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: operator.clone(),
+                right: Box::new(right),
+            };
         }
         Ok(expr)
     }
@@ -333,7 +354,11 @@ impl<'a> Parser<'a> {
         while self.matches(&vec![TokenType::Minus, TokenType::Plus]) {
             let operator = self.previous();
             let right = self.factor()?;
-            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: operator.clone(),
+                right: Box::new(right),
+            };
         }
         Ok(expr)
     }
@@ -343,7 +368,11 @@ impl<'a> Parser<'a> {
         while self.matches(&vec![TokenType::Slash, TokenType::Star]) {
             let operator = self.previous();
             let right = self.unary()?;
-            expr = Expr::Binary(Box::new(expr), operator.clone(), Box::new(right));
+            expr = Expr::Binary {
+                left: Box::new(expr),
+                operator: operator.clone(),
+                right: Box::new(right),
+            };
         }
         Ok(expr)
     }
@@ -352,34 +381,45 @@ impl<'a> Parser<'a> {
         if self.matches(&vec![TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous();
             let right = self.unary()?;
-            return Ok(Expr::Unary(operator.clone(), Box::new(right)));
+            return Ok(Expr::Unary {
+                operator: operator.clone(),
+                right: Box::new(right),
+            });
         }
         return self.primary();
     }
 
     fn primary(&mut self) -> Result<Expr, SyntaxError> {
         if self.matches(&vec![TokenType::False]) {
-            return Ok(Expr::Literal(Object::Bool(false)));
+            return Ok(Expr::Literal {
+                value: Object::Bool(false),
+            });
         }
         if self.matches(&vec![TokenType::True]) {
-            return Ok(Expr::Literal(Object::Bool(true)));
+            return Ok(Expr::Literal {
+                value: Object::Bool(true),
+            });
         }
         if self.matches(&vec![TokenType::Nil]) {
-            return Ok(Expr::Literal(Object::Nil));
+            return Ok(Expr::Literal { value: Object::Nil });
         }
         if self.matches(&vec![TokenType::Number, TokenType::String]) {
-            return Ok(Expr::Literal(
-                self.previous().literal.expect("No literal found in token"),
-            ));
+            return Ok(Expr::Literal {
+                value: self.previous().literal.expect("No literal found in token"),
+            });
         }
         if self.matches(&vec![TokenType::Identifier]) {
-            return Ok(Expr::Variable(self.previous()));
+            return Ok(Expr::Variable {
+                name: self.previous(),
+            });
         }
 
         if self.matches(&vec![TokenType::LeftParen]) {
             let expr = self.expression()?;
             self.consume(&TokenType::RightParen, &"Expect ')' after expression.")?;
-            return Ok(Expr::Grouping(Box::new(expr)));
+            return Ok(Expr::Grouping {
+                expression: Box::new(expr),
+            });
         }
         return Err(SyntaxError::new(
             self.tokens[self.current].clone(),
