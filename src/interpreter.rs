@@ -2,7 +2,7 @@ use crate::ast::Expr;
 use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::stmt::Stmt;
-use crate::token::TokenType;
+use crate::token::{Token, TokenType};
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -13,6 +13,35 @@ pub enum Object {
     Number(f32),
     Bool(bool),
     Nil,
+    Function,
+}
+
+trait Callable {
+    fn call(
+        &self,
+        token: &Token,
+        interpretor: &mut Interpretor,
+        arguments: Vec<Object>,
+    ) -> Result<Self, RuntimeError>
+    where
+        Self: Sized;
+}
+
+impl Callable for Object {
+    fn call(
+        &self,
+        token: &Token,
+        interpretor: &mut Interpretor,
+        arguments: Vec<Object>,
+    ) -> Result<Self, RuntimeError> {
+        match self {
+            Self::Function => Ok(self.clone()),
+            _ => Err(RuntimeError::new(
+                token.clone(),
+                "Can only call functions and classes.",
+            )),
+        }
+    }
 }
 
 impl fmt::Display for Object {
@@ -29,6 +58,9 @@ impl fmt::Display for Object {
             }
             Object::Nil => {
                 write!(f, "{:}", "nil")
+            }
+            Object::Function => {
+                write!(f, "{:}", "Anonymous Function")
             }
         }
     }
@@ -148,7 +180,20 @@ impl Interpretor {
                     _ => Ok(Object::Nil),
                 }
             }
-            Expr::Call { .. } => todo!(),
+            Expr::Call {
+                callee: c,
+                paren: p,
+                arguments: a,
+            } => {
+                let callee = self.visit_expr(&c)?;
+
+                let mut arguments = vec![];
+                for argument in a {
+                    arguments.push(self.visit_expr(argument)?)
+                }
+
+                Ok(callee.call(p, self, arguments)?)
+            }
 
             Expr::Grouping { expression } => self.visit_expr(expression),
             Expr::Literal { value } => Ok(value.clone()),

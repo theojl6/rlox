@@ -87,6 +87,9 @@ impl AstPrinter {
                 Object::Nil => {
                     ast.push_str(&"nil");
                 }
+                Object::Function => {
+                    ast.push_str(&"Anonymous Function");
+                }
             },
             Expr::Logical { .. } => todo!(),
             Expr::Unary { operator, right } => {

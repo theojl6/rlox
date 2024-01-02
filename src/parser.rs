@@ -1,6 +1,7 @@
 use crate::ast::Expr;
 use crate::error::SyntaxError;
 use crate::interpreter::Object;
+use crate::lox_error;
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 pub struct Parser<'a> {
@@ -393,6 +394,9 @@ impl<'a> Parser<'a> {
         let mut arguments = vec![];
         if !self.check(&TokenType::RightParen) {
             while self.matches(&vec![TokenType::Comma]) {
+                if arguments.len() >= 255 {
+                    lox_error(self.peek(), "Can't have more than 255 arguments.");
+                }
                 let expression = Box::new(self.expression()?);
                 arguments.push(expression);
             }
