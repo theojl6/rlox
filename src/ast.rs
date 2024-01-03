@@ -87,7 +87,7 @@ impl AstPrinter {
                 Object::Nil => {
                     ast.push_str(&"nil");
                 }
-                Object::Function => {
+                Object::Function { arity } => {
                     ast.push_str(&"Anonymous Function");
                 }
             },

@@ -13,7 +13,7 @@ pub enum Object {
     Number(f32),
     Bool(bool),
     Nil,
-    Function,
+    Function { arity: usize },
 }
 
 trait Callable {
@@ -25,6 +25,8 @@ trait Callable {
     ) -> Result<Self, RuntimeError>
     where
         Self: Sized;
+
+    fn arity(&self) -> usize;
 }
 
 impl Callable for Object {
@@ -35,11 +37,18 @@ impl Callable for Object {
         arguments: Vec<Object>,
     ) -> Result<Self, RuntimeError> {
         match self {
-            Self::Function => Ok(self.clone()),
+            Self::Function { arity } => Ok(self.clone()),
             _ => Err(RuntimeError::new(
                 token.clone(),
                 "Can only call functions and classes.",
             )),
+        }
+    }
+
+    fn arity(&self) -> usize {
+        match self {
+            Self::Function { arity } => *arity,
+            _ => 0,
         }
     }
 }
@@ -59,7 +68,7 @@ impl fmt::Display for Object {
             Object::Nil => {
                 write!(f, "{:}", "nil")
             }
-            Object::Function => {
+            Object::Function { arity } => {
                 write!(f, "{:}", "Anonymous Function")
             }
         }
@@ -190,6 +199,17 @@ impl Interpretor {
                 let mut arguments = vec![];
                 for argument in a {
                     arguments.push(self.visit_expr(argument)?)
+                }
+
+                if arguments.len() != callee.arity() {
+                    return Err(RuntimeError::new(
+                        p.clone(),
+                        &("Expected ".to_owned()
+                            + &callee.arity().to_string()
+                            + " arguments but got "
+                            + &arguments.len().to_string()
+                            + "."),
+                    ));
                 }
 
                 Ok(callee.call(p, self, arguments)?)
