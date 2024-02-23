@@ -69,7 +69,7 @@ impl<'a> Parser<'a> {
                 right: Box::new(right),
             };
         }
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn and(&mut self) -> Result<Expr, SyntaxError> {
@@ -84,7 +84,7 @@ impl<'a> Parser<'a> {
                 right: Box::new(right),
             };
         }
-        return Ok(expr);
+        Ok(expr)
     }
 
     fn declaration(&mut self) -> Option<Stmt> {
@@ -100,12 +100,12 @@ impl<'a> Parser<'a> {
         }
         let stmt = self.statement();
         match stmt {
-            Ok(s) => return Some(s),
+            Ok(s) => Some(s),
             Err(_) => {
                 self.synchronize();
-                return None;
+                None
             }
-        };
+        }
     }
 
     fn statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -126,7 +126,7 @@ impl<'a> Parser<'a> {
                 statements: self.block()?,
             });
         }
-        return self.expression_statement();
+        self.expression_statement()
     }
 
     fn for_statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -189,7 +189,7 @@ impl<'a> Parser<'a> {
             None => {}
         }
 
-        return Ok(body);
+        Ok(body)
     }
 
     fn if_statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -203,11 +203,11 @@ impl<'a> Parser<'a> {
         if self.matches(&vec![TokenType::Else]) {
             else_branch = Some(Box::new(self.statement()?));
         }
-        return Ok(Stmt::If {
+        Ok(Stmt::If {
             condition,
             then_branch,
             else_branch,
-        });
+        })
     }
 
     fn print_statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -226,7 +226,7 @@ impl<'a> Parser<'a> {
             &TokenType::Semicolon,
             "Expect ';' after variable declaration",
         )?;
-        return Ok(Stmt::Var { name, initializer });
+        Ok(Stmt::Var { name, initializer })
     }
 
     fn while_statement(&mut self) -> Result<Stmt, SyntaxError> {
@@ -234,10 +234,10 @@ impl<'a> Parser<'a> {
         let condition = self.expression()?;
         self.consume(&TokenType::RightParen, "Expect ')' after condition.")?;
         let body = self.statement()?;
-        return Ok(Stmt::While {
+        Ok(Stmt::While {
             condition,
             body: Box::new(body),
-        });
+        })
     }
 
     fn expression_statement(&mut self) -> Result<Stmt, SyntaxError> {
