@@ -6,6 +6,35 @@ use crate::token::{Token, TokenType};
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
+use std::time::{SystemTime, UNIX_EPOCH};
+
+#[derive(Debug, Clone)]
+struct Function {
+    arity: usize,
+    func: fn(Box<Vec<String>>) -> Object,
+}
+
+impl Function {
+    fn new(arity: usize, func: fn(Box<Vec<String>>) -> Object) -> Self {
+        Function { arity, func }
+    }
+}
+
+impl Callable<Object> for Function {
+    fn arity(&self) -> usize {
+        self.arity
+    }
+
+    fn call(
+        &self,
+        token: &Token,
+        interpretor: &mut Interpretor,
+        arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError> {
+        let ret = (self.func)(Box::new(Vec::new()));
+        Ok(ret)
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -13,44 +42,20 @@ pub enum Object {
     Number(f32),
     Bool(bool),
     Nil,
-    Function { arity: usize },
+    Function(Function),
 }
 
-trait Callable {
+trait Callable<T> {
     fn call(
         &self,
         token: &Token,
         interpretor: &mut Interpretor,
         arguments: Vec<Object>,
-    ) -> Result<Self, RuntimeError>
+    ) -> Result<T, RuntimeError>
     where
         Self: Sized;
 
     fn arity(&self) -> usize;
-}
-
-impl Callable for Object {
-    fn call(
-        &self,
-        token: &Token,
-        interpretor: &mut Interpretor,
-        arguments: Vec<Object>,
-    ) -> Result<Self, RuntimeError> {
-        match self {
-            Self::Function { arity } => Ok(self.clone()),
-            _ => Err(RuntimeError::new(
-                token.clone(),
-                "Can only call functions and classes.",
-            )),
-        }
-    }
-
-    fn arity(&self) -> usize {
-        match self {
-            Self::Function { arity } => *arity,
-            _ => 0,
-        }
-    }
 }
 
 impl fmt::Display for Object {
@@ -68,7 +73,7 @@ impl fmt::Display for Object {
             Object::Nil => {
                 write!(f, "{:}", "nil")
             }
-            Object::Function { arity } => {
+            Object::Function(func) => {
                 write!(f, "{:}", "Anonymous Function")
             }
         }
@@ -88,13 +93,28 @@ impl PartialEq for Object {
 }
 
 pub struct Interpretor {
+    globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpretor {
     pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new(None)));
+        globals.borrow_mut().define(
+            String::from("clock"),
+            Object::Function(Function::new(0, |_| {
+                let start = SystemTime::now();
+                let since_the_epoch = start
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_millis();
+                println!("{:?}", since_the_epoch);
+                Object::Nil
+            })),
+        );
         Interpretor {
-            environment: Rc::new(RefCell::new(Environment::new(None))),
+            globals: Rc::clone(&globals),
+            environment: Rc::clone(&globals),
         }
     }
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> () {
@@ -116,7 +136,7 @@ impl Interpretor {
                 let value = self.visit_expr(value)?;
                 let v = value.clone();
                 self.environment.borrow_mut().assign(name.clone(), v)?;
-                return Ok(value);
+                Ok(value)
             }
             Expr::Binary {
                 left,
@@ -201,6 +221,15 @@ impl Interpretor {
                     arguments.push(self.visit_expr(argument)?)
                 }
 
+                let callee = if let Object::Function(func) = callee {
+                    Ok(func)
+                } else {
+                    Err(RuntimeError::new(
+                        p.clone(),
+                        "Can only call functions and classes",
+                    ))
+                }?;
+
                 if arguments.len() != callee.arity() {
                     return Err(RuntimeError::new(
                         p.clone(),
@@ -212,7 +241,7 @@ impl Interpretor {
                     ));
                 }
 
-                Ok(callee.call(p, self, arguments)?)
+                callee.call(p, self, arguments)
             }
 
             Expr::Grouping { expression } => self.visit_expr(expression),

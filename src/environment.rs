@@ -44,12 +44,10 @@ impl Environment {
                 e.borrow_mut().assign(name, value)?;
                 Ok(())
             }
-            None => {
-                return Err(RuntimeError::new(
-                    name.clone(),
-                    &("Undefined variable '".to_owned() + &name.lexeme + "'."),
-                ));
-            }
+            None => Err(RuntimeError::new(
+                name.clone(),
+                &("Undefined variable '".to_owned() + &name.lexeme + "'."),
+            )),
         }
     }
 

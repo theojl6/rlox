@@ -387,7 +387,7 @@ impl<'a> Parser<'a> {
                 right: Box::new(right),
             });
         }
-        return self.call();
+        self.call()
     }
 
     fn finish_call(&mut self, callee: &Expr) -> Result<Expr, SyntaxError> {
