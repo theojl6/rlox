@@ -7,6 +7,7 @@ use std::usize;
 mod ast;
 mod environment;
 mod error;
+mod function;
 mod interpreter;
 mod parser;
 mod scanner;

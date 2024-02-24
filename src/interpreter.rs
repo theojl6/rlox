@@ -1,6 +1,7 @@
 use crate::ast::Expr;
 use crate::environment::Environment;
 use crate::error::RuntimeError;
+use crate::function::Function;
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 use std::cell::RefCell;
@@ -9,49 +10,21 @@ use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
-struct Function {
-    arity: usize,
-    func: fn(Box<Vec<String>>) -> Object,
-}
-
-impl Function {
-    fn new(arity: usize, func: fn(Box<Vec<String>>) -> Object) -> Self {
-        Function { arity, func }
-    }
-}
-
-impl Callable<Object> for Function {
-    fn arity(&self) -> usize {
-        self.arity
-    }
-
-    fn call(
-        &self,
-        token: &Token,
-        interpretor: &mut Interpretor,
-        arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError> {
-        let ret = (self.func)(Box::new(Vec::new()));
-        Ok(ret)
-    }
-}
-
-#[derive(Debug, Clone)]
 pub enum Object {
     String(String),
     Number(f32),
     Bool(bool),
     Nil,
-    Function(Function),
+    Function(Box<Function>),
 }
 
-trait Callable<T> {
+pub trait Callable {
     fn call(
         &self,
         token: &Token,
         interpretor: &mut Interpretor,
         arguments: Vec<Object>,
-    ) -> Result<T, RuntimeError>
+    ) -> Result<Object, RuntimeError>
     where
         Self: Sized;
 
@@ -93,25 +66,25 @@ impl PartialEq for Object {
 }
 
 pub struct Interpretor {
-    globals: Rc<RefCell<Environment>>,
+    pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
 }
 
 impl Interpretor {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
-        globals.borrow_mut().define(
-            String::from("clock"),
-            Object::Function(Function::new(0, |_| {
-                let start = SystemTime::now();
-                let since_the_epoch = start
-                    .duration_since(UNIX_EPOCH)
-                    .expect("Time went backwards")
-                    .as_millis();
-                println!("{:?}", since_the_epoch);
-                Object::Nil
-            })),
-        );
+        // globals.borrow_mut().define(
+        //     String::from("clock"),
+        //     Object::Function(DummyFunction::new(0, |_| {
+        //         let start = SystemTime::now();
+        //         let since_the_epoch = start
+        //             .duration_since(UNIX_EPOCH)
+        //             .expect("Time went backwards")
+        //             .as_millis();
+        //         println!("{:?}", since_the_epoch);
+        //         Object::Nil
+        //     })),
+        // );
         Interpretor {
             globals: Rc::clone(&globals),
             environment: Rc::clone(&globals),
@@ -122,7 +95,7 @@ impl Interpretor {
             let _ = self.visit_stmt(&stmt);
         }
     }
-    fn interpret_block(&mut self, stmts: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) {
+    pub fn interpret_block(&mut self, stmts: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) {
         let previous = self.environment.clone();
         self.environment = environment;
         for stmt in stmts {
@@ -335,10 +308,24 @@ impl Interpretor {
                     self.visit_stmt(body)?;
                 }
             }
+            Stmt::Function { name, params, body } => {
+                self.visit_function(&s)?;
+            }
 
             _ => {}
         };
         Ok(())
+    }
+
+    fn visit_function(&self, stmt: &Stmt) -> Result<Object, RuntimeError> {
+        if let Stmt::Function { name, params, body } = stmt {
+            let function = Function::new(stmt.clone());
+            self.environment
+                .borrow_mut()
+                .define(name.lexeme.clone(), Object::Function(Box::new(function)));
+        };
+
+        Ok(Object::Nil)
     }
 }
 

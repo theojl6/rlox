@@ -268,6 +268,7 @@ impl<'a> Parser<'a> {
 
         let mut params = Vec::new();
         if !self.check(&TokenType::RightParen) {
+            params.push(self.consume(&TokenType::Identifier, "Expect parameter name.")?);
             while self.matches(&vec![TokenType::Comma]) {
                 if params.len() >= 255 {
                     lox_error(self.peek(), "Can't have more than 255 parameters.");
@@ -435,6 +436,8 @@ impl<'a> Parser<'a> {
     fn finish_call(&mut self, callee: &Expr) -> Result<Expr, SyntaxError> {
         let mut arguments = vec![];
         if !self.check(&TokenType::RightParen) {
+            let expression = Box::new(self.expression()?);
+            arguments.push(expression);
             while self.matches(&vec![TokenType::Comma]) {
                 if arguments.len() >= 255 {
                     lox_error(self.peek(), "Can't have more than 255 arguments.");
