@@ -24,7 +24,6 @@ impl Function {
 impl Callable for Function {
     fn call(
         &self,
-        token: &Token,
         interpretor: &mut Interpretor,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>

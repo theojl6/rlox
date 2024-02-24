@@ -21,7 +21,6 @@ pub enum Object {
 pub trait Callable {
     fn call(
         &self,
-        token: &Token,
         interpretor: &mut Interpretor,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>
@@ -214,7 +213,7 @@ impl Interpretor {
                     ));
                 }
 
-                callee.call(p, self, arguments)
+                callee.call(self, arguments)
             }
 
             Expr::Grouping { expression } => self.visit_expr(expression),
