@@ -266,13 +266,13 @@ impl<'a> Parser<'a> {
             &("Expect '(' after ".to_owned() + kind + " name."),
         )?;
 
-        let mut parameters = Vec::new();
+        let mut params = Vec::new();
         if !self.check(&TokenType::RightParen) {
             while self.matches(&vec![TokenType::Comma]) {
-                if parameters.len() >= 255 {
+                if params.len() >= 255 {
                     lox_error(self.peek(), "Can't have more than 255 parameters.");
                 }
-                parameters.push(self.consume(&TokenType::Identifier, "Expect parameter name.")?)
+                params.push(self.consume(&TokenType::Identifier, "Expect parameter name.")?)
             }
         }
 
@@ -285,11 +285,7 @@ impl<'a> Parser<'a> {
 
         let body = self.block()?;
 
-        Ok(Stmt::Function {
-            name,
-            params: parameters,
-            body,
-        })
+        Ok(Stmt::Function { name, params, body })
     }
 
     fn block(&mut self) -> Result<Vec<Stmt>, SyntaxError> {
@@ -301,7 +297,7 @@ impl<'a> Parser<'a> {
             }
         }
         self.consume(&TokenType::RightBrace, "Expect '}' after block.")?;
-        return Ok(statements);
+        Ok(statements)
     }
 
     fn equality(&mut self) -> Result<Expr, SyntaxError> {
@@ -340,7 +336,7 @@ impl<'a> Parser<'a> {
         if !self.is_at_end() {
             self.current = self.current + 1;
         }
-        return self.previous();
+        self.previous()
     }
 
     fn is_at_end(&self) -> bool {
@@ -511,6 +507,6 @@ impl<'a> Parser<'a> {
             return Ok(self.advance());
         }
 
-        return Err(SyntaxError::new(self.tokens[self.current].clone(), message));
+        Err(SyntaxError::new(self.tokens[self.current].clone(), message))
     }
 }

@@ -266,7 +266,7 @@ impl Interpretor {
             }
 
             Expr::Unary { operator, right } => {
-                let obj: Object = self.visit_expr(e)?;
+                let obj: Object = self.visit_expr(right)?;
                 match operator.token_type {
                     TokenType::Bang => Ok(Object::Bool(is_truthy(&obj))),
                     TokenType::Minus => match obj {
