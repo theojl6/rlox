@@ -88,7 +88,10 @@ impl AstPrinter {
                     ast.push_str(&"nil");
                 }
                 Object::Function(..) => {
-                    ast.push_str(&"Anonymous Function");
+                    ast.push_str(&"Function");
+                }
+                Object::NativeFunction(..) => {
+                    ast.push_str(&"Native Function");
                 }
             },
             Expr::Logical { .. } => todo!(),

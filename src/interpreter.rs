@@ -1,7 +1,7 @@
 use crate::ast::Expr;
 use crate::environment::Environment;
 use crate::error::RuntimeError;
-use crate::function::Function;
+use crate::function::{Function, NativeFunction};
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 use std::cell::RefCell;
@@ -16,6 +16,7 @@ pub enum Object {
     Bool(bool),
     Nil,
     Function(Box<Function>),
+    NativeFunction(NativeFunction),
 }
 
 pub trait Callable {
@@ -46,7 +47,18 @@ impl fmt::Display for Object {
                 write!(f, "{:}", "nil")
             }
             Object::Function(func) => {
+                if let Stmt::Function {
+                    name,
+                    params: _,
+                    body: _,
+                } = &func.declaration
+                {
+                    return write!(f, "{:}", "Function<".to_owned() + &name.lexeme + ">");
+                }
                 write!(f, "{:}", "Anonymous Function")
+            }
+            Object::NativeFunction(_) => {
+                write!(f, "Native Function")
             }
         }
     }
@@ -72,18 +84,17 @@ pub struct Interpretor {
 impl Interpretor {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
-        // globals.borrow_mut().define(
-        //     String::from("clock"),
-        //     Object::Function(DummyFunction::new(0, |_| {
-        //         let start = SystemTime::now();
-        //         let since_the_epoch = start
-        //             .duration_since(UNIX_EPOCH)
-        //             .expect("Time went backwards")
-        //             .as_millis();
-        //         println!("{:?}", since_the_epoch);
-        //         Object::Nil
-        //     })),
-        // );
+        globals.borrow_mut().define(
+            String::from("clock"),
+            Object::NativeFunction(NativeFunction::new(0, || {
+                let start = SystemTime::now();
+                let since_the_epoch = start
+                    .duration_since(UNIX_EPOCH)
+                    .expect("Time went backwards")
+                    .as_millis();
+                println!("{:?}", since_the_epoch);
+            })),
+        );
         Interpretor {
             globals: Rc::clone(&globals),
             environment: Rc::clone(&globals),
@@ -193,27 +204,38 @@ impl Interpretor {
                     arguments.push(self.visit_expr(argument)?)
                 }
 
-                let callee = if let Object::Function(func) = callee {
-                    Ok(func)
-                } else {
-                    Err(RuntimeError::new(
+                match callee {
+                    Object::Function(func) => {
+                        if arguments.len() != func.arity() {
+                            return Err(RuntimeError::new(
+                                p.clone(),
+                                &("Expected ".to_owned()
+                                    + &func.arity().to_string()
+                                    + " arguments but got "
+                                    + &arguments.len().to_string()
+                                    + "."),
+                            ));
+                        }
+                        func.call(self, arguments)
+                    }
+                    Object::NativeFunction(func) => {
+                        if arguments.len() != func.arity() {
+                            return Err(RuntimeError::new(
+                                p.clone(),
+                                &("Expected ".to_owned()
+                                    + &func.arity().to_string()
+                                    + " arguments but got "
+                                    + &arguments.len().to_string()
+                                    + "."),
+                            ));
+                        }
+                        func.call(self, arguments)
+                    }
+                    _ => Err(RuntimeError::new(
                         p.clone(),
                         "Can only call functions and classes",
-                    ))
-                }?;
-
-                if arguments.len() != callee.arity() {
-                    return Err(RuntimeError::new(
-                        p.clone(),
-                        &("Expected ".to_owned()
-                            + &callee.arity().to_string()
-                            + " arguments but got "
-                            + &arguments.len().to_string()
-                            + "."),
-                    ));
+                    )),
                 }
-
-                callee.call(self, arguments)
             }
 
             Expr::Grouping { expression } => self.visit_expr(expression),

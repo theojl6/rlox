@@ -5,11 +5,10 @@ use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::interpreter::{Callable, Interpretor, Object};
 use crate::stmt::Stmt;
-use crate::token::Token;
 
 #[derive(Debug, Clone)]
 pub struct Function {
-    declaration: Stmt,
+    pub declaration: Stmt,
 }
 
 impl Function {
@@ -33,7 +32,12 @@ impl Callable for Function {
         let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
             &interpretor.globals,
         )))));
-        if let Stmt::Function { name, params, body } = &self.declaration {
+        if let Stmt::Function {
+            name: _,
+            params,
+            body,
+        } = &self.declaration
+        {
             let mut arguments_iter = arguments.iter();
             for p in params {
                 environment.borrow_mut().define(
@@ -50,9 +54,48 @@ impl Callable for Function {
     }
 
     fn arity(&self) -> usize {
-        if let Stmt::Function { name, params, body } = &self.declaration {
+        if let Stmt::Function {
+            name: _,
+            params,
+            body: _,
+        } = &self.declaration
+        {
             return params.len();
         }
         0
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeFunction {
+    arity: usize,
+    native_function: fn(),
+}
+
+impl NativeFunction {
+    pub fn new(arity: usize, native_function: fn()) -> NativeFunction {
+        NativeFunction {
+            arity,
+            native_function,
+        }
+    }
+}
+
+impl Callable for NativeFunction {
+    fn arity(&self) -> usize {
+        self.arity
+    }
+
+    fn call(
+        &self,
+        interpretor: &mut Interpretor,
+        arguments: Vec<Object>,
+    ) -> Result<Object, RuntimeError>
+    where
+        Self: Sized,
+    {
+        (self.native_function)();
+
+        Ok(Object::Nil)
     }
 }
