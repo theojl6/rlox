@@ -3,7 +3,7 @@ use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::function::{Function, NativeFunction};
 use crate::stmt::Stmt;
-use crate::token::{Token, TokenType};
+use crate::token::TokenType;
 use std::cell::RefCell;
 use std::fmt;
 use std::rc::Rc;
@@ -58,7 +58,7 @@ impl fmt::Display for Object {
                 write!(f, "{:}", "Anonymous Function")
             }
             Object::NativeFunction(_) => {
-                write!(f, "Native Function")
+                write!(f, "{:}", "Native Function")
             }
         }
     }
@@ -329,7 +329,7 @@ impl Interpretor {
                     self.visit_stmt(body)?;
                 }
             }
-            Stmt::Function { name, params, body } => {
+            Stmt::Function { .. } => {
                 self.visit_function(&s)?;
             }
 
@@ -339,7 +339,12 @@ impl Interpretor {
     }
 
     fn visit_function(&self, stmt: &Stmt) -> Result<Object, RuntimeError> {
-        if let Stmt::Function { name, params, body } = stmt {
+        if let Stmt::Function {
+            name,
+            params: _,
+            body: _,
+        } = stmt
+        {
             let function = Function::new(stmt.clone());
             self.environment
                 .borrow_mut()
@@ -371,7 +376,7 @@ fn is_equal(l_obj: &Object, r_obj: &Object) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::{self, Token, TokenType};
+    use crate::token::{Token, TokenType};
 
     #[test]
     fn unary() {
@@ -395,8 +400,8 @@ mod tests {
 
     #[test]
     fn assignment() {
-        let mut interpretor = Interpretor::new();
-        let assignment_expression = Expr::Assign {
+        let mut _interpretor = Interpretor::new();
+        let _assignment_expression = Expr::Assign {
             name: Token {
                 token_type: TokenType::Identifier,
                 lexeme: String::from("a"),

@@ -88,8 +88,8 @@ impl Callable for NativeFunction {
 
     fn call(
         &self,
-        interpretor: &mut Interpretor,
-        arguments: Vec<Object>,
+        _interpretor: &mut Interpretor,
+        _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>
     where
         Self: Sized,
