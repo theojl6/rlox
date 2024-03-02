@@ -205,8 +205,18 @@ impl Visitor<String, String> for AstPrinter {
                 condition,
                 then_branch,
                 else_branch,
-            } => ast.push_str("If"),
-            Stmt::Print(_) => todo!(),
+            } => {
+                let c = self.visit_expr(condition)?;
+                let then = self.visit_stmt(&then_branch)?;
+
+                ast.push_str(&("if (".to_owned() + &c + ") { " + &then + " }"));
+
+                if let Some(b) = else_branch {
+                    let else_b = self.visit_stmt(&b)?;
+                    ast.push_str(&(" else { ".to_owned() + &else_b + " }"));
+                }
+            }
+            Stmt::Print(_) => {}
             Stmt::Return { keyword, value } => todo!(),
             Stmt::Var { name, initializer } => todo!(),
             Stmt::While { condition, body } => todo!(),
