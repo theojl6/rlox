@@ -105,13 +105,18 @@ impl Interpretor {
             let _ = self.visit_stmt(&stmt);
         }
     }
-    pub fn interpret_block(&mut self, stmts: &Vec<Stmt>, environment: Rc<RefCell<Environment>>) {
+    pub fn interpret_block(
+        &mut self,
+        stmts: &Vec<Stmt>,
+        environment: Rc<RefCell<Environment>>,
+    ) -> Result<(), RuntimeError> {
         let previous = self.environment.clone();
         self.environment = environment;
         for stmt in stmts {
-            let _ = self.visit_stmt(&stmt);
+            self.visit_stmt(&stmt)?;
         }
         self.environment = previous;
+        Ok(())
     }
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
@@ -137,6 +142,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     TokenType::GreaterEqual => match (left_obj, right_obj) {
@@ -144,6 +150,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     TokenType::Less => match (left_obj, right_obj) {
@@ -151,6 +158,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     TokenType::LessEqual => match (left_obj, right_obj) {
@@ -158,6 +166,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     TokenType::Minus => match (left_obj, right_obj) {
@@ -165,6 +174,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     TokenType::Plus => match (left_obj, right_obj) {
@@ -173,6 +183,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be two numbers or two strings.",
+                            None,
                         )),
                     },
                     TokenType::Slash => match (left_obj, right_obj) {
@@ -180,6 +191,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     TokenType::Star => match (left_obj, right_obj) {
@@ -187,6 +199,7 @@ impl Interpretor {
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
+                            None,
                         )),
                     },
                     _ => Ok(Object::Nil),
@@ -214,6 +227,7 @@ impl Interpretor {
                                     + " arguments but got "
                                     + &arguments.len().to_string()
                                     + "."),
+                                None,
                             ));
                         }
                         func.call(self, arguments)
@@ -227,6 +241,7 @@ impl Interpretor {
                                     + " arguments but got "
                                     + &arguments.len().to_string()
                                     + "."),
+                                None,
                             ));
                         }
                         func.call(self, arguments)
@@ -234,6 +249,7 @@ impl Interpretor {
                     _ => Err(RuntimeError::new(
                         p.clone(),
                         "Can only call functions and classes",
+                        None,
                     )),
                 }
             }
@@ -268,6 +284,7 @@ impl Interpretor {
                         _ => Err(RuntimeError::new(
                             operator.clone(),
                             "Operand must be a number",
+                            None,
                         )),
                     },
                     _ => Ok(Object::Nil),
@@ -304,6 +321,15 @@ impl Interpretor {
                 let obj = self.visit_expr(e)?;
                 println!("{obj}");
             }
+            Stmt::Return { keyword, value } => {
+                let mut return_value = Object::Nil;
+                if let Expr::Literal { .. } = value {
+                } else {
+                    println!("returned expression: {:?}", value);
+                    return_value = self.visit_expr(value)?;
+                }
+                return Err(RuntimeError::new(keyword.clone(), "", Some(return_value)));
+            }
             Stmt::Var { name, initializer } => {
                 let mut value = Object::Nil;
                 match initializer {
@@ -317,7 +343,7 @@ impl Interpretor {
                     .define(name.lexeme.clone(), value);
             }
             Stmt::Block { statements } => {
-                self.interpret_block(
+                let _ = self.interpret_block(
                     statements,
                     Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
                         &(self.environment),

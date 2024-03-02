@@ -48,7 +48,13 @@ impl Callable for Function {
                         .clone(),
                 )
             }
-            interpretor.interpret_block(&body, environment);
+            let result = interpretor.interpret_block(&body, environment);
+
+            if let Err(e) = result {
+                let value = e.value.unwrap();
+                println!("returned value: {:?}", value);
+                return Ok(value);
+            }
         }
         Ok(Object::Nil)
     }

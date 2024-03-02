@@ -1,5 +1,5 @@
 use crate::ast::Expr;
-use crate::error::SyntaxError;
+use crate::error::{RuntimeError, SyntaxError};
 use crate::interpreter::Object;
 use crate::lox_error;
 use crate::stmt::Stmt;
@@ -128,6 +128,9 @@ impl<'a> Parser<'a> {
         if self.matches(&vec![TokenType::Print]) {
             return self.print_statement();
         }
+        if self.matches(&vec![TokenType::Return]) {
+            return self.return_statement();
+        }
         if self.matches(&vec![TokenType::While]) {
             return self.while_statement();
         }
@@ -224,6 +227,16 @@ impl<'a> Parser<'a> {
         let value = self.expression()?;
         self.consume(&TokenType::Semicolon, "Expect ';' after value.")?;
         Ok(Stmt::Print(value))
+    }
+
+    fn return_statement(&mut self) -> Result<Stmt, SyntaxError> {
+        let keyword = self.previous();
+        let mut value = Expr::Literal { value: Object::Nil };
+        if !self.check(&TokenType::Semicolon) {
+            value = self.expression()?;
+        }
+        self.consume(&TokenType::Semicolon, "Expect ';' after return value.")?;
+        Ok(Stmt::Return { keyword, value })
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, SyntaxError> {
@@ -499,10 +512,10 @@ impl<'a> Parser<'a> {
                 expression: Box::new(expr),
             });
         }
-        return Err(SyntaxError::new(
+        Err(SyntaxError::new(
             self.tokens[self.current].clone(),
             &"Expected expression.",
-        ));
+        ))
     }
 
     fn consume(&mut self, token_type: &TokenType, message: &str) -> Result<Token, SyntaxError> {

@@ -1,3 +1,4 @@
+use crate::interpreter::Object;
 use crate::report;
 use crate::Token;
 
@@ -5,16 +6,20 @@ use crate::Token;
 pub struct RuntimeError {
     token: Token,
     message: String,
+    pub value: Option<Object>,
 }
 
 impl RuntimeError {
-    pub fn new(token: Token, message: &str) -> Self {
-        report(token.line, &token.lexeme, &message);
+    pub fn new(token: Token, message: &str, value: Option<Object>) -> Self {
+        if value.is_none() {
+            report(token.line, &token.lexeme, &message);
+        }
 
-        return Self {
+        Self {
             token,
             message: message.into(),
-        };
+            value,
+        }
     }
 }
 

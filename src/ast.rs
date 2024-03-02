@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{interpreter::Object, token::Token};
 
 #[derive(Clone, Debug)]
