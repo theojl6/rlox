@@ -39,18 +39,18 @@ impl Scanner {
     fn scan_single_token(&mut self) {
         let c = self.advance();
         match c {
-            Some('(') => self.add_token(TokenType::LeftParen),
-            Some(')') => self.add_token(TokenType::RightParen),
-            Some('{') => self.add_token(TokenType::LeftBrace),
-            Some('}') => self.add_token(TokenType::RightBrace),
-            Some(',') => self.add_token(TokenType::Comma),
-            Some('.') => self.add_token(TokenType::Dot),
-            Some('-') => self.add_token(TokenType::Minus),
-            Some('+') => self.add_token(TokenType::Plus),
-            Some(';') => self.add_token(TokenType::Semicolon),
-            Some('*') => self.add_token(TokenType::Star),
+            '(' => self.add_token(TokenType::LeftParen),
+            ')' => self.add_token(TokenType::RightParen),
+            '{' => self.add_token(TokenType::LeftBrace),
+            '}' => self.add_token(TokenType::RightBrace),
+            ',' => self.add_token(TokenType::Comma),
+            '.' => self.add_token(TokenType::Dot),
+            '-' => self.add_token(TokenType::Minus),
+            '+' => self.add_token(TokenType::Plus),
+            ';' => self.add_token(TokenType::Semicolon),
+            '*' => self.add_token(TokenType::Star),
 
-            Some('!') => {
+            '!' => {
                 if self.matches(&'=') {
                     self.add_token(TokenType::BangEqual)
                 } else {
@@ -58,7 +58,7 @@ impl Scanner {
                 }
             }
 
-            Some('=') => {
+            '=' => {
                 if self.matches(&'=') {
                     self.add_token(TokenType::EqualEqual)
                 } else {
@@ -66,7 +66,7 @@ impl Scanner {
                 }
             }
 
-            Some('<') => {
+            '<' => {
                 if self.matches(&'=') {
                     self.add_token(TokenType::LessEqual)
                 } else {
@@ -74,7 +74,7 @@ impl Scanner {
                 }
             }
 
-            Some('>') => {
+            '>' => {
                 if self.matches(&'=') {
                     self.add_token(TokenType::GreaterEqual)
                 } else {
@@ -82,7 +82,7 @@ impl Scanner {
                 }
             }
 
-            Some('/') => {
+            '/' => {
                 if self.matches(&'/') {
                     while self.peek() != '\n' && !self.is_at_end() {
                         self.advance();
@@ -92,17 +92,17 @@ impl Scanner {
                 }
             }
 
-            Some(' ') | Some('\r') | Some('\t') => {}
+            ' ' | '\r' | '\t' => {}
 
-            Some('\n') => {
+            '\n' => {
                 self.line += 1;
             }
 
-            Some('"') => {
+            '"' => {
                 self.string();
             }
 
-            Some(c) => {
+            c => {
                 if c.is_digit(10) {
                     self.number();
                 } else if c.is_ascii_alphabetic() || c == '_' {
@@ -111,11 +111,10 @@ impl Scanner {
                     error(self.line, &"Unexpected character.")
                 }
             }
-            None => (),
         }
     }
-    fn advance(&mut self) -> Option<char> {
-        let c = self.source.chars().nth(self.current);
+    fn advance(&mut self) -> char {
+        let c = self.source.chars().nth(self.current).unwrap();
         self.current = self.current + 1;
         c
     }
