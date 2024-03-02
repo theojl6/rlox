@@ -70,6 +70,8 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     match stmts {
         Ok(stmts) => {
             let mut interpreter = Interpretor::new();
+            let mut ast_printer = AstPrinter;
+            ast_printer.print(stmts.clone());
             interpreter.interpret(stmts);
         }
         Err(e) => {

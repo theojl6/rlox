@@ -120,7 +120,7 @@ impl Interpretor {
     }
 }
 
-impl Visitor<Object> for Interpretor {
+impl Visitor<Object, ()> for Interpretor {
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
