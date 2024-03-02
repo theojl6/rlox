@@ -26,18 +26,19 @@ fn main() {
     let mut had_error = false;
     let mut had_runtime_error = false;
     let args: Vec<String> = env::args().collect();
+    let debug_mode = env::var("DEBUG").is_ok();
     if args.len() > 2 {
         println!("Usage: rlox [script]");
     } else if args.len() == 2 {
-        run_file(&args[1], &mut had_error, &mut had_runtime_error);
+        run_file(&args[1], &mut had_error, &mut had_runtime_error, debug_mode);
     } else {
-        run_prompt(&mut had_error, &mut had_runtime_error);
+        run_prompt(&mut had_error, &mut had_runtime_error, debug_mode);
     }
 }
 
-fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
+fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bool) {
     let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-    run(&contents, had_error, had_runtime_error);
+    run(&contents, had_error, had_runtime_error, debug_mode);
     if *had_error {
         process::exit(65);
     }
@@ -46,7 +47,7 @@ fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     }
 }
 
-fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool) {
+fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bool) {
     loop {
         let mut prompt = String::new();
         println!("> ");
@@ -57,12 +58,12 @@ fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool) {
         if prompt == "exit" || prompt == "" {
             break;
         }
-        run(prompt.as_str(), had_error, had_runtime_error);
+        run(prompt.as_str(), had_error, had_runtime_error, debug_mode);
         *had_error = false;
     }
 }
 
-fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
+fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bool) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
@@ -70,8 +71,10 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool) {
     match stmts {
         Ok(stmts) => {
             let mut interpreter = Interpretor::new();
-            let mut ast_printer = AstPrinter;
-            ast_printer.print(stmts.clone());
+            if debug_mode {
+                let mut ast_printer = AstPrinter;
+                ast_printer.print(stmts.clone());
+            }
             interpreter.interpret(stmts);
         }
         Err(e) => {
