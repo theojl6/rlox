@@ -1,6 +1,6 @@
 use std::fmt;
 
-use crate::{interpreter::Object, token::Token};
+use crate::{error::RuntimeError, interpreter::Object, stmt::Stmt, token::Token};
 
 #[derive(Clone, Debug)]
 pub enum Expr {
@@ -38,6 +38,11 @@ pub enum Expr {
     },
 }
 
+pub trait Visitor<T> {
+    fn visit_expr(&mut self, e: &Expr) -> Result<T, RuntimeError>;
+
+    fn visit_stmt(&mut self, s: &Stmt) -> Result<(), RuntimeError>;
+}
 pub struct AstPrinter;
 
 impl AstPrinter {
@@ -57,8 +62,8 @@ impl AstPrinter {
     }
 }
 
-impl AstPrinter {
-    fn visit_expr(&mut self, e: &Expr) -> String {
+impl Visitor<String> for AstPrinter {
+    fn visit_expr(&mut self, e: &Expr) -> Result<String, RuntimeError> {
         let mut ast = String::new();
         match e {
             Expr::Assign { name, value } => (),
@@ -67,13 +72,13 @@ impl AstPrinter {
                 operator,
                 right,
             } => {
-                let left_expr = &self.visit_expr(left);
-                let right_expr = &self.visit_expr(right);
+                let left_expr = &self.visit_expr(left)?;
+                let right_expr = &self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![left_expr, right_expr]);
             }
             Expr::Call { .. } => todo!(),
             Expr::Grouping { expression } => {
-                let expr = &self.visit_expr(expression);
+                let expr = &self.visit_expr(expression)?;
                 self.parenthesize(&mut ast, &"group", vec![expr]);
             }
             Expr::Literal { value } => match value {
@@ -98,12 +103,16 @@ impl AstPrinter {
             },
             Expr::Logical { .. } => todo!(),
             Expr::Unary { operator, right } => {
-                let expr = &self.visit_expr(right);
+                let expr = &self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![expr]);
             }
             Expr::Variable { .. } => todo!(),
         };
-        ast
+        Ok(ast)
+    }
+
+    fn visit_stmt(&mut self, s: &Stmt) -> Result<(), RuntimeError> {
+        todo!()
     }
 }
 
@@ -126,7 +135,10 @@ mod tests {
                 value: Object::Number(0.0),
             }),
         };
-        assert_eq!(ast_printer.visit_expr(&unary_expression), "(- 0)")
+        assert_eq!(
+            ast_printer.visit_expr(&unary_expression).expect(""),
+            "(- 0)"
+        )
     }
 
     #[test]
@@ -146,7 +158,7 @@ mod tests {
                 value: Object::Number(1.0),
             }),
         };
-        assert_eq!(ast_printer.visit_expr(&binary_expr), "(+ 1 1)")
+        assert_eq!(ast_printer.visit_expr(&binary_expr).expect(""), "(+ 1 1)")
     }
 
     #[test]
@@ -157,7 +169,10 @@ mod tests {
                 value: Object::String("hello".into()),
             }),
         };
-        assert_eq!(ast_printer.visit_expr(&grouping_expr), "(group hello)");
+        assert_eq!(
+            ast_printer.visit_expr(&grouping_expr).expect(""),
+            "(group hello)"
+        );
     }
 
     #[test]
@@ -191,7 +206,9 @@ mod tests {
         };
 
         assert_eq!(
-            ast_printer.visit_expr(&binary_expr_with_binary_expr),
+            ast_printer
+                .visit_expr(&binary_expr_with_binary_expr)
+                .expect(""),
             "(- 0 (+ 0 1))"
         )
     }
@@ -224,7 +241,7 @@ mod tests {
             }),
         };
         assert_eq!(
-            ast_printer.visit_expr(&expression),
+            ast_printer.visit_expr(&expression).expect(""),
             "(* (- 123) (group 45.67))"
         )
     }

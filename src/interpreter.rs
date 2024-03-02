@@ -1,4 +1,4 @@
-use crate::ast::Expr;
+use crate::ast::{Expr, Visitor};
 use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::function::{Function, NativeFunction};
@@ -118,6 +118,9 @@ impl Interpretor {
         self.environment = previous;
         Ok(())
     }
+}
+
+impl Visitor<Object> for Interpretor {
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
@@ -355,29 +358,20 @@ impl Interpretor {
                     self.visit_stmt(body)?;
                 }
             }
-            Stmt::Function { .. } => {
-                self.visit_function(&s)?;
+            Stmt::Function {
+                name,
+                params: _,
+                body: _,
+            } => {
+                let function = Function::new(s.clone());
+                self.environment
+                    .borrow_mut()
+                    .define(name.lexeme.clone(), Object::Function(Box::new(function)));
             }
 
             _ => {}
         };
         Ok(())
-    }
-
-    fn visit_function(&self, stmt: &Stmt) -> Result<Object, RuntimeError> {
-        if let Stmt::Function {
-            name,
-            params: _,
-            body: _,
-        } = stmt
-        {
-            let function = Function::new(stmt.clone());
-            self.environment
-                .borrow_mut()
-                .define(name.lexeme.clone(), Object::Function(Box::new(function)));
-        };
-
-        Ok(Object::Nil)
     }
 }
 
