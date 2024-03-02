@@ -146,7 +146,7 @@ impl Visitor<String> for AstPrinter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::token::TokenType;
+    use crate::{ast, token::TokenType};
 
     #[test]
     fn unary() {
@@ -203,6 +203,20 @@ mod tests {
     }
 
     #[test]
+    fn variable() {
+        let mut ast_printer = AstPrinter;
+        let variable_expr = Expr::Variable {
+            name: Token {
+                token_type: TokenType::Identifier,
+                lexeme: String::from("x"),
+                literal: None,
+                line: 0,
+            },
+        };
+        assert_eq!(ast_printer.visit_expr(&variable_expr).expect(""), "x")
+    }
+
+    #[test]
     fn binary_with_binary() {
         let mut ast_printer = AstPrinter;
         let binary_expr = Expr::Binary {
@@ -237,6 +251,30 @@ mod tests {
                 .visit_expr(&binary_expr_with_binary_expr)
                 .expect(""),
             "(- 0 (+ 0 1))"
+        )
+    }
+
+    #[test]
+    fn logical() {
+        let mut ast_printer = AstPrinter;
+        let logical_expr = Expr::Logical {
+            left: Box::new(Expr::Literal {
+                value: Object::Bool(true),
+            }),
+            operator: Token {
+                token_type: TokenType::And,
+                lexeme: String::from("and"),
+                literal: None,
+                line: 0,
+            },
+            right: Box::new(Expr::Literal {
+                value: Object::Bool(true),
+            }),
+        };
+
+        assert_eq!(
+            ast_printer.visit_expr(&logical_expr).expect(""),
+            "(and true true)"
         )
     }
 
