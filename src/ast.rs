@@ -1,5 +1,3 @@
-use std::fmt;
-
 use crate::{error::RuntimeError, interpreter::Object, stmt::Stmt, token::Token};
 
 #[derive(Clone, Debug)]
@@ -50,13 +48,13 @@ impl AstPrinter {
         &mut self,
         ast_string: &mut String,
         name: &str,
-        expression_strings: Vec<&String>,
+        expression_strings: Vec<String>,
     ) {
         ast_string.push('(');
         ast_string.push_str(name);
         for s in expression_strings {
             ast_string.push(' ');
-            ast_string.push_str(s);
+            ast_string.push_str(&s);
         }
         ast_string.push(')');
     }
@@ -66,19 +64,34 @@ impl Visitor<String> for AstPrinter {
     fn visit_expr(&mut self, e: &Expr) -> Result<String, RuntimeError> {
         let mut ast = String::new();
         match e {
-            Expr::Assign { name, value } => (),
+            Expr::Assign { name, value } => {
+                let expr = self.visit_expr(value)?;
+                self.parenthesize(&mut ast, &"assign", vec![name.lexeme.clone(), expr]);
+            }
             Expr::Binary {
                 left,
                 operator,
                 right,
             } => {
-                let left_expr = &self.visit_expr(left)?;
-                let right_expr = &self.visit_expr(right)?;
+                let left_expr = self.visit_expr(left)?;
+                let right_expr = self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![left_expr, right_expr]);
             }
-            Expr::Call { .. } => todo!(),
+            Expr::Call {
+                callee,
+                paren: _,
+                arguments,
+            } => {
+                let callee = &self.visit_expr(callee)?;
+                let arguments: Vec<String> = arguments
+                    .iter()
+                    .map(|e| self.visit_expr(e).expect("error visiting expressions"))
+                    .collect();
+
+                self.parenthesize(&mut ast, callee, arguments)
+            }
             Expr::Grouping { expression } => {
-                let expr = &self.visit_expr(expression)?;
+                let expr = self.visit_expr(expression)?;
                 self.parenthesize(&mut ast, &"group", vec![expr]);
             }
             Expr::Literal { value } => match value {
@@ -94,19 +107,33 @@ impl Visitor<String> for AstPrinter {
                 Object::Nil => {
                     ast.push_str(&"nil");
                 }
-                Object::Function(..) => {
-                    ast.push_str(&"Function");
+                Object::Function(func) => {
+                    let declaration = &func.declaration;
+                    let name = if let Stmt::Function { name, .. } = declaration {
+                        name.lexeme.clone()
+                    } else {
+                        String::from("<unnamed>")
+                    };
+                    ast.push_str(&("<fun>".to_owned() + &name));
                 }
                 Object::NativeFunction(..) => {
-                    ast.push_str(&"Native Function");
+                    ast.push_str(&"<native fun>");
                 }
             },
-            Expr::Logical { .. } => todo!(),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => {
+                let left_expr = self.visit_expr(left)?;
+                let right_expr = self.visit_expr(right)?;
+                self.parenthesize(&mut ast, &operator.lexeme, vec![left_expr, right_expr]);
+            }
             Expr::Unary { operator, right } => {
-                let expr = &self.visit_expr(right)?;
+                let expr = self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![expr]);
             }
-            Expr::Variable { .. } => todo!(),
+            Expr::Variable { name } => ast.push_str(&name.lexeme),
         };
         Ok(ast)
     }
@@ -211,6 +238,80 @@ mod tests {
                 .expect(""),
             "(- 0 (+ 0 1))"
         )
+    }
+
+    #[test]
+    fn assign() {
+        let mut ast_printer = AstPrinter;
+        let assign_expr = Expr::Assign {
+            name: Token {
+                token_type: TokenType::Identifier,
+                lexeme: String::from("x"),
+                literal: None,
+                line: 0,
+            },
+            value: Box::new(Expr::Literal { value: Object::Nil }),
+        };
+
+        assert_eq!(
+            ast_printer.visit_expr(&assign_expr).expect(""),
+            "(assign x nil)"
+        )
+    }
+
+    #[test]
+    fn call() {
+        let mut ast_printer = AstPrinter;
+        let call_expr = Expr::Call {
+            callee: Box::new(Expr::Variable {
+                name: Token {
+                    token_type: TokenType::Identifier,
+                    lexeme: String::from("hello"),
+                    literal: None,
+                    line: 0,
+                },
+            }),
+            paren: Token {
+                token_type: TokenType::RightParen,
+                lexeme: String::from(")"),
+                literal: None,
+                line: 0,
+            },
+            arguments: vec![
+                Box::new(Expr::Binary {
+                    left: Box::new(Expr::Literal {
+                        value: Object::Number(0.0),
+                    }),
+                    operator: Token {
+                        token_type: TokenType::Plus,
+                        lexeme: String::from("+"),
+                        literal: None,
+                        line: 0,
+                    },
+                    right: Box::new(Expr::Literal {
+                        value: Object::Number(1.0),
+                    }),
+                }),
+                Box::new(Expr::Binary {
+                    left: Box::new(Expr::Literal {
+                        value: Object::Number(1.0),
+                    }),
+                    operator: Token {
+                        token_type: TokenType::Plus,
+                        lexeme: String::from("-"),
+                        literal: None,
+                        line: 0,
+                    },
+                    right: Box::new(Expr::Literal {
+                        value: Object::Number(1.0),
+                    }),
+                }),
+            ],
+        };
+        assert_eq!(
+            ast_printer.visit_expr(&call_expr).expect(""),
+            "(hello (+ 0 1) (- 1 1))"
+        );
     }
 
     #[test]

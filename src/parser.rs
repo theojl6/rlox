@@ -473,6 +473,7 @@ impl<'a> Parser<'a> {
         loop {
             if self.matches(&vec![TokenType::LeftParen]) {
                 expr = self.finish_call(&expr)?;
+                println!("{:?}", expr);
             } else {
                 break;
             }
