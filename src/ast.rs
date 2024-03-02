@@ -184,13 +184,16 @@ impl Visitor<String, String> for AstPrinter {
 
                 function.push_str(")");
 
-                function.push_str(" {");
+                function.push_str(" {\n");
 
-                let body = body
+                let body: String = body
                     .iter()
-                    .map(|b| self.visit_stmt(b).expect("error printing function body"))
-                    .collect::<Vec<String>>()
-                    .join(", ");
+                    .map(|b| {
+                        "    ".to_owned()
+                            + &self.visit_stmt(b).expect("error printing function body")
+                            + ";\n"
+                    })
+                    .collect();
 
                 function.push_str(&body);
 
@@ -202,7 +205,7 @@ impl Visitor<String, String> for AstPrinter {
                 condition,
                 then_branch,
                 else_branch,
-            } => todo!(),
+            } => ast.push_str("If"),
             Stmt::Print(_) => todo!(),
             Stmt::Return { keyword, value } => todo!(),
             Stmt::Var { name, initializer } => todo!(),
