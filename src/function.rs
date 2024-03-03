@@ -52,7 +52,6 @@ impl Callable for Function {
 
             if let Err(e) = result {
                 let value = e.value.unwrap();
-                println!("returned value: {:?}", value);
                 return Ok(value);
             }
         }

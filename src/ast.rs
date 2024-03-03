@@ -156,10 +156,12 @@ impl Visitor<String, String> for AstPrinter {
         let mut ast = String::new();
         match s {
             Stmt::Block { statements } => {
+                ast.push_str("{\n");
                 for s in statements {
                     let stmt = self.visit_stmt(s)?;
-                    ast.push_str(&stmt);
+                    ast.push_str(&("  ".to_owned() + &stmt + ";\n"));
                 }
+                ast.push_str("}");
             }
             Stmt::Class {
                 name,
@@ -216,10 +218,24 @@ impl Visitor<String, String> for AstPrinter {
                     ast.push_str(&(" else { ".to_owned() + &else_b + " }"));
                 }
             }
-            Stmt::Print(_) => {}
-            Stmt::Return { keyword, value } => todo!(),
-            Stmt::Var { name, initializer } => todo!(),
-            Stmt::While { condition, body } => todo!(),
+            Stmt::Print(e) => {
+                ast.push_str(&self.visit_expr(e)?);
+            }
+            Stmt::Return { keyword, value } => {
+                ast.push_str(&(keyword.lexeme.clone() + " " + &self.visit_expr(value)?));
+            }
+            Stmt::Var { name, initializer } => {
+                ast.push_str(&name.lexeme.clone());
+                if let Some(i) = initializer {
+                    ast.push_str(&(" = ".to_owned() + &self.visit_expr(i)?));
+                }
+            }
+            Stmt::While { condition, body } => {
+                let c = self.visit_expr(condition)?;
+                let b = self.visit_stmt(&body)?;
+
+                ast.push_str(&("while (".to_owned() + &c + ") { " + &b + " }"));
+            }
         }
         Ok(ast)
     }

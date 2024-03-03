@@ -328,7 +328,6 @@ impl Visitor<Object, ()> for Interpretor {
                 let mut return_value = Object::Nil;
                 if let Expr::Literal { .. } = value {
                 } else {
-                    println!("returned expression: {:?}", value);
                     return_value = self.visit_expr(value)?;
                 }
                 return Err(RuntimeError::new(keyword.clone(), "", Some(return_value)));
