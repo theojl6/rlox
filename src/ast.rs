@@ -211,7 +211,7 @@ impl Visitor<String, String> for AstPrinter {
                 let c = self.visit_expr(condition)?;
                 let then = self.visit_stmt(&then_branch)?;
 
-                ast.push_str(&("if (".to_owned() + &c + ") { " + &then + " }"));
+                ast.push_str(format!("if ({c}) {{ {then} }}").as_str());
 
                 if let Some(b) = else_branch {
                     let else_b = self.visit_stmt(&b)?;
