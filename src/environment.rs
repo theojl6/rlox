@@ -17,9 +17,8 @@ impl Environment {
     }
 
     pub fn get(&self, name: Token) -> Result<Object, RuntimeError> {
-        let val = self.values.get(&name.lexeme);
-        match val {
-            Some(o) => Ok(o.clone()),
+        match self.values.get(&name.lexeme).cloned() {
+            Some(o) => Ok(o),
             None => match &self.enclosing {
                 Some(e) => {
                     let enc = e.borrow();
