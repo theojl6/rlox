@@ -1,9 +1,8 @@
 fun fib(n) {
-  print n;
   if (n <= 1) return n;
-  var fib1 = fib(n - 1);
-  var fib2 = fib(n - 2);
-  return fib1 + fib2;
+  return fib(n - 2) + fib(n - 1);
 }
 
-fib(3);
+for (var i = 0; i < 20; i = i + 1) {
+  print fib(i);
+}

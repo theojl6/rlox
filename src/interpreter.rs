@@ -113,8 +113,11 @@ impl Interpretor {
         let previous = self.environment.clone();
         self.environment = environment;
         for stmt in stmts {
-            println!("evaluating stmt {:?}", stmt);
-            self.visit_stmt(&stmt)?;
+            let s = self.visit_stmt(&stmt);
+            if let Err(e) = s {
+                self.environment = previous;
+                return Err(e);
+            }
         }
         self.environment = previous;
         Ok(())
@@ -137,9 +140,6 @@ impl Visitor<Object, ()> for Interpretor {
             } => {
                 let left_obj = self.visit_expr(left)?;
                 let right_obj = self.visit_expr(right)?;
-                println!("left {:?}", left_obj);
-                println!("operator {}", operator.lexeme);
-                println!("right {:?}", right_obj);
 
                 match operator.token_type {
                     TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
@@ -333,9 +333,16 @@ impl Visitor<Object, ()> for Interpretor {
                 println!("{obj}");
             }
             Stmt::Return { keyword, value } => {
-                println!("Stmt::Return expr {:?}", value);
-                let return_value = self.visit_expr(value)?;
-                return Err(RuntimeError::new(keyword.clone(), "", Some(return_value)));
+                let ret = self.visit_expr(value);
+                match ret {
+                    Ok(o) => {
+                        return Err(RuntimeError::new(keyword.clone(), "", Some(o)));
+                    }
+                    Err(e) if e.value.is_some() => {
+                        return Err(e);
+                    }
+                    Err(e) => return Err(e),
+                }
             }
             Stmt::Var { name, initializer } => {
                 let mut value = Object::Nil;

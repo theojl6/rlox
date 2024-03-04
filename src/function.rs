@@ -44,15 +44,15 @@ impl Callable for Function {
                     .next()
                     .expect("Error mapping arguments to parameters")
                     .clone();
-                println!("arg: {:?}", arg);
                 environment.borrow_mut().define(p.lexeme.clone(), arg)
             }
             let result = interpretor.interpret_block(&body, environment);
 
             if let Err(e) = result {
-                let value = e.value.unwrap();
-                println!("{:?}", value);
-                return Ok(value);
+                match e.value {
+                    Some(v) => return Ok(v),
+                    None => return Err(e),
+                }
             }
         }
         Ok(Object::Nil)
