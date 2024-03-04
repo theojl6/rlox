@@ -40,18 +40,18 @@ impl Callable for Function {
         {
             let mut arguments_iter = arguments.iter();
             for p in params {
-                environment.borrow_mut().define(
-                    p.lexeme.clone(),
-                    arguments_iter
-                        .next()
-                        .expect("Error mapping arguments to parameters")
-                        .clone(),
-                )
+                let arg = arguments_iter
+                    .next()
+                    .expect("Error mapping arguments to parameters")
+                    .clone();
+                println!("arg: {:?}", arg);
+                environment.borrow_mut().define(p.lexeme.clone(), arg)
             }
             let result = interpretor.interpret_block(&body, environment);
 
             if let Err(e) = result {
                 let value = e.value.unwrap();
+                println!("{:?}", value);
                 return Ok(value);
             }
         }

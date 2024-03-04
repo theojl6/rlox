@@ -113,6 +113,7 @@ impl Interpretor {
         let previous = self.environment.clone();
         self.environment = environment;
         for stmt in stmts {
+            println!("evaluating stmt {:?}", stmt);
             self.visit_stmt(&stmt)?;
         }
         self.environment = previous;
@@ -136,6 +137,9 @@ impl Visitor<Object, ()> for Interpretor {
             } => {
                 let left_obj = self.visit_expr(left)?;
                 let right_obj = self.visit_expr(right)?;
+                println!("left {:?}", left_obj);
+                println!("operator {}", operator.lexeme);
+                println!("right {:?}", right_obj);
 
                 match operator.token_type {
                     TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
@@ -205,7 +209,11 @@ impl Visitor<Object, ()> for Interpretor {
                             None,
                         )),
                     },
-                    _ => Ok(Object::Nil),
+                    _ => Err(RuntimeError::new(
+                        operator.clone(),
+                        "Invalid use of operator.",
+                        None,
+                    )),
                 }
             }
             Expr::Call {
@@ -302,7 +310,7 @@ impl Visitor<Object, ()> for Interpretor {
     fn visit_stmt(&mut self, s: &Stmt) -> Result<(), RuntimeError> {
         match s {
             Stmt::Expr(e) => {
-                let _ = self.visit_expr(e)?;
+                self.visit_expr(e)?;
             }
             Stmt::If {
                 condition,
@@ -325,11 +333,8 @@ impl Visitor<Object, ()> for Interpretor {
                 println!("{obj}");
             }
             Stmt::Return { keyword, value } => {
-                let mut return_value = Object::Nil;
-                if let Expr::Literal { .. } = value {
-                } else {
-                    return_value = self.visit_expr(value)?;
-                }
+                println!("Stmt::Return expr {:?}", value);
+                let return_value = self.visit_expr(value)?;
                 return Err(RuntimeError::new(keyword.clone(), "", Some(return_value)));
             }
             Stmt::Var { name, initializer } => {
@@ -345,12 +350,12 @@ impl Visitor<Object, ()> for Interpretor {
                     .define(name.lexeme.clone(), value);
             }
             Stmt::Block { statements } => {
-                let _ = self.interpret_block(
+                self.interpret_block(
                     statements,
                     Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
                         &(self.environment),
                     ))))),
-                );
+                )?;
             }
             Stmt::While { condition, body } => {
                 while is_truthy(&self.visit_expr(condition)?) {

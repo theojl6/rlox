@@ -219,7 +219,8 @@ impl Visitor<String, String> for AstPrinter {
                 }
             }
             Stmt::Print(e) => {
-                ast.push_str(&self.visit_expr(e)?);
+                let expr = &self.visit_expr(e)?;
+                ast.push_str(&format!("print {expr};"));
             }
             Stmt::Return { keyword, value } => {
                 ast.push_str(&(keyword.lexeme.clone() + " " + &self.visit_expr(value)?));
