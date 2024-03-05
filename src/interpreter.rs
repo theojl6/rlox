@@ -374,7 +374,7 @@ impl Visitor<Object, ()> for Interpretor {
                 params: _,
                 body: _,
             } => {
-                let function = Function::new(s.clone());
+                let function = Function::new(s.clone(), Rc::clone(&self.environment));
                 self.environment
                     .borrow_mut()
                     .define(name.lexeme.clone(), Object::Function(Box::new(function)));

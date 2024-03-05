@@ -9,12 +9,16 @@ use crate::stmt::Stmt;
 #[derive(Debug, Clone)]
 pub struct Function {
     pub declaration: Stmt,
+    closure: Rc<RefCell<Environment>>,
 }
 
 impl Function {
-    pub fn new(declaration: Stmt) -> Function {
+    pub fn new(declaration: Stmt, environment: Rc<RefCell<Environment>>) -> Function {
         if let Stmt::Function { .. } = declaration {
-            return Function { declaration };
+            return Function {
+                declaration,
+                closure: environment,
+            };
         }
         panic!("Function implemented without declaration")
     }
@@ -30,7 +34,7 @@ impl Callable for Function {
         Self: Sized,
     {
         let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
-            &interpretor.globals,
+            &self.closure,
         )))));
         if let Stmt::Function {
             name: _,
