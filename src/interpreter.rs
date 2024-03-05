@@ -22,7 +22,7 @@ pub enum Object {
 pub trait Callable {
     fn call(
         &self,
-        interpretor: &mut Interpretor,
+        interpreter: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>
     where
@@ -76,12 +76,12 @@ impl PartialEq for Object {
     }
 }
 
-pub struct Interpretor {
+pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
 }
 
-impl Interpretor {
+impl Interpreter {
     pub fn new() -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
         globals.borrow_mut().define(
@@ -95,7 +95,7 @@ impl Interpretor {
                 println!("{:?}", since_the_epoch);
             })),
         );
-        Interpretor {
+        Interpreter {
             globals: Rc::clone(&globals),
             environment: Rc::clone(&globals),
         }
@@ -124,7 +124,7 @@ impl Interpretor {
     }
 }
 
-impl Visitor<Object, ()> for Interpretor {
+impl Visitor<Object, ()> for Interpreter {
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn unary() {
-        let mut interpretor = Interpretor::new();
+        let mut interpreter = Interpreter::new();
         let unary_expression = Expr::Unary {
             operator: Token {
                 token_type: TokenType::Minus,
@@ -423,7 +423,7 @@ mod tests {
                 value: Object::Number(1.0),
             }),
         };
-        match interpretor.visit_expr(&unary_expression) {
+        match interpreter.visit_expr(&unary_expression) {
             Ok(r) => assert_eq!(r, Object::Number(-1.0)),
             Err(_) => panic!(),
         }
@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn assignment() {
-        let mut _interpretor = Interpretor::new();
+        let mut _interpreter = Interpreter::new();
         let _assignment_expression = Expr::Assign {
             name: Token {
                 token_type: TokenType::Identifier,

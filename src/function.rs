@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use crate::environment::Environment;
 use crate::error::RuntimeError;
-use crate::interpreter::{Callable, Interpretor, Object};
+use crate::interpreter::{Callable, Interpreter, Object};
 use crate::stmt::Stmt;
 
 #[derive(Debug, Clone)]
@@ -27,7 +27,7 @@ impl Function {
 impl Callable for Function {
     fn call(
         &self,
-        interpretor: &mut Interpretor,
+        interpreter: &mut Interpreter,
         arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>
     where
@@ -50,7 +50,7 @@ impl Callable for Function {
                     .clone();
                 environment.borrow_mut().define(p.lexeme.clone(), arg)
             }
-            let result = interpretor.interpret_block(&body, environment);
+            let result = interpreter.interpret_block(&body, environment);
 
             if let Err(e) = result {
                 match e.value {
@@ -97,7 +97,7 @@ impl Callable for NativeFunction {
 
     fn call(
         &self,
-        _interpretor: &mut Interpretor,
+        _interpreter: &mut Interpreter,
         _arguments: Vec<Object>,
     ) -> Result<Object, RuntimeError>
     where

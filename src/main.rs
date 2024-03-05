@@ -10,6 +10,7 @@ mod error;
 mod function;
 mod interpreter;
 mod parser;
+mod resolver;
 mod scanner;
 mod stmt;
 mod token;
@@ -18,7 +19,7 @@ use token::TokenType;
 
 use crate::ast::AstPrinter;
 use crate::error::RuntimeError;
-use crate::interpreter::Interpretor;
+use crate::interpreter::Interpreter;
 use crate::parser::Parser;
 use crate::scanner::Scanner;
 
@@ -70,7 +71,7 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_m
     let stmts = parser.parse();
     match stmts {
         Ok(stmts) => {
-            let mut interpreter = Interpretor::new();
+            let mut interpreter = Interpreter::new();
             if debug_mode {
                 let mut ast_printer = AstPrinter;
                 ast_printer.print(stmts.clone());
