@@ -122,6 +122,9 @@ impl Interpreter {
         self.environment = previous;
         Ok(())
     }
+    pub fn resolve(&self, expr: &Expr, n: usize) {
+        todo!()
+    }
 }
 
 impl Visitor<Object, ()> for Interpreter {
