@@ -20,7 +20,7 @@ impl Resolver {
         }
     }
 
-    fn resolve(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
+    fn resolve_stmts(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
         for statement in statements {
             self.visit_stmt(statement)?;
         }
@@ -60,30 +60,61 @@ impl Resolver {
             }
         }
     }
+    fn resolve_function(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+        if let Stmt::Function { name, params, body } = stmt {
+            self.begin_scope();
+            for param in params {
+                self.declare(param);
+                self.define(param);
+            }
+            self.resolve_stmts(body)?;
+            self.end_scope();
+        }
+        Ok(())
+    }
 }
 
 impl Visitor<(), ()> for Resolver {
     fn visit_expr(&mut self, e: &Expr) -> Result<(), RuntimeError> {
         match e {
-            Expr::Assign { name, value } => todo!(),
+            Expr::Assign { name, value } => {
+                self.visit_expr(value)?;
+                self.resolve_local(value, name);
+                Ok(())
+            }
             Expr::Binary {
                 left,
-                operator,
+                operator: _,
                 right,
-            } => todo!(),
+            } => {
+                self.visit_expr(left)?;
+                self.visit_expr(right)?;
+                Ok(())
+            }
             Expr::Call {
                 callee,
-                paren,
+                paren: _,
                 arguments,
-            } => todo!(),
-            Expr::Grouping { expression } => todo!(),
-            Expr::Literal { value } => todo!(),
+            } => {
+                self.visit_expr(callee)?;
+
+                for argument in arguments {
+                    self.visit_expr(argument)?;
+                }
+                Ok(())
+            }
+            Expr::Grouping { expression } => self.visit_expr(expression),
+            Expr::Literal { value: _ } => Ok(()),
             Expr::Logical {
                 left,
-                operator,
+                operator: _,
                 right,
-            } => todo!(),
-            Expr::Unary { operator, right } => todo!(),
+            } => {
+                self.visit_expr(left)?;
+                self.visit_expr(right)?;
+                Ok(())
+            }
+            Expr::Unary { operator: _, right } => self.visit_expr(right),
             Expr::Variable { name } => {
                 if !self.scopes.is_empty()
                     && self
@@ -109,7 +140,7 @@ impl Visitor<(), ()> for Resolver {
         match s {
             Stmt::Block { statements } => {
                 self.begin_scope();
-                self.resolve(statements);
+                self.resolve_stmts(statements)?;
                 self.end_scope();
                 Ok(())
             }
@@ -118,14 +149,30 @@ impl Visitor<(), ()> for Resolver {
                 superclass,
                 methods,
             } => todo!(),
-            Stmt::Expr(_) => todo!(),
-            Stmt::Function { name, params, body } => todo!(),
+            Stmt::Expr(e) => self.visit_expr(e),
+            Stmt::Function {
+                name,
+                params: _,
+                body: _,
+            } => {
+                self.declare(name);
+                self.define(name);
+                self.resolve_function(s)?;
+                Ok(())
+            }
             Stmt::If {
                 condition,
                 then_branch,
                 else_branch,
-            } => todo!(),
-            Stmt::Print(_) => todo!(),
+            } => {
+                self.visit_expr(condition)?;
+                self.visit_stmt(&then_branch)?;
+                if let Some(s) = else_branch {
+                    self.visit_stmt(s)?;
+                }
+                Ok(())
+            }
+            Stmt::Print(e) => self.visit_expr(e),
             Stmt::Return { keyword, value } => todo!(),
             Stmt::Var { name, initializer } => {
                 self.declare(name);
@@ -135,7 +182,11 @@ impl Visitor<(), ()> for Resolver {
                 self.define(name);
                 Ok(())
             }
-            Stmt::While { condition, body } => todo!(),
+            Stmt::While { condition, body } => {
+                self.visit_expr(condition)?;
+                self.visit_stmt(body)?;
+                Ok(())
+            }
         }
     }
 }
