@@ -5,7 +5,9 @@ use crate::function::{Function, NativeFunction};
 use crate::stmt::Stmt;
 use crate::token::TokenType;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::fmt;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -17,6 +19,19 @@ pub enum Object {
     Nil,
     Function(Box<Function>),
     NativeFunction(NativeFunction),
+}
+
+impl Hash for Object {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Object::String(s) => s.hash(state),
+            Object::Number(n) => n.to_bits().hash(state),
+            Object::Bool(b) => b.hash(state),
+            Object::Nil => self.hash(state),
+            Object::Function(f) => f.hash(state),
+            Object::NativeFunction(f) => f.hash(state),
+        }
+    }
 }
 
 pub trait Callable {
@@ -79,6 +94,7 @@ impl PartialEq for Object {
 pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
+    locals: HashMap<Expr, usize>,
 }
 
 impl Interpreter {
@@ -98,6 +114,7 @@ impl Interpreter {
         Interpreter {
             globals: Rc::clone(&globals),
             environment: Rc::clone(&globals),
+            locals: HashMap::new(),
         }
     }
     pub fn interpret(&mut self, stmts: Vec<Stmt>) -> () {
@@ -122,7 +139,7 @@ impl Interpreter {
         self.environment = previous;
         Ok(())
     }
-    pub fn resolve(&self, expr: &Expr, n: usize) {
+    pub fn resolve(&self, expr: &Expr, depth: usize) {
         todo!()
     }
 }

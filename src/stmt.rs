@@ -1,6 +1,6 @@
 use crate::{ast::Expr, token::Token};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Hash)]
 pub enum Stmt {
     Block {
         statements: Vec<Stmt>,

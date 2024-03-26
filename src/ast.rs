@@ -1,6 +1,8 @@
+use std::hash::{Hash, Hasher};
+
 use crate::{error::RuntimeError, interpreter::Object, stmt::Stmt, token::Token};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
     Assign {
         name: Token,
@@ -34,6 +36,39 @@ pub enum Expr {
     Variable {
         name: Token,
     },
+}
+
+impl Hash for Expr {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Expr::Assign { name, value } => {
+                name.lexeme.hash(state);
+                name.line.hash(state);
+                name.literal.hash(state);
+                name.token_type.hash(state);
+                value.hash(state);
+            }
+            Expr::Binary {
+                left,
+                operator,
+                right,
+            } => todo!(),
+            Expr::Call {
+                callee,
+                paren,
+                arguments,
+            } => todo!(),
+            Expr::Grouping { expression } => todo!(),
+            Expr::Literal { value } => todo!(),
+            Expr::Logical {
+                left,
+                operator,
+                right,
+            } => todo!(),
+            Expr::Unary { operator, right } => todo!(),
+            Expr::Variable { name } => todo!(),
+        }
+    }
 }
 
 pub trait Visitor<T, K> {

@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
 use crate::environment::Environment;
@@ -10,6 +11,12 @@ use crate::stmt::Stmt;
 pub struct Function {
     pub declaration: Stmt,
     closure: Rc<RefCell<Environment>>,
+}
+
+impl Hash for Function {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.declaration.hash(state);
+    }
 }
 
 impl Function {
@@ -75,7 +82,7 @@ impl Callable for Function {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Hash)]
 pub struct NativeFunction {
     arity: usize,
     native_function: fn(),
