@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::interpreter::Object;
 
-#[derive(PartialEq, Clone, Debug, Hash)]
+#[derive(PartialEq, Clone, Debug, Hash, Eq)]
 pub enum TokenType {
     // Single character tokens
     LeftParen,
@@ -58,7 +58,7 @@ impl fmt::Display for TokenType {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq)]
 pub struct Token {
     pub token_type: TokenType,
     pub lexeme: String,

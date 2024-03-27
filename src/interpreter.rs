@@ -91,6 +91,8 @@ impl PartialEq for Object {
     }
 }
 
+impl Eq for Object {}
+
 pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
@@ -139,9 +141,7 @@ impl Interpreter {
         self.environment = previous;
         Ok(())
     }
-    pub fn resolve(&self, expr: &Expr, depth: usize) {
-        todo!()
-    }
+    pub fn resolve(&self, expr: &Expr, depth: usize) {}
 }
 
 impl Visitor<Object, ()> for Interpreter {

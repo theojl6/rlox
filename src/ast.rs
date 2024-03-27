@@ -2,7 +2,7 @@ use std::hash::{Hash, Hasher};
 
 use crate::{error::RuntimeError, interpreter::Object, stmt::Stmt, token::Token};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expr {
     Assign {
         name: Token,
