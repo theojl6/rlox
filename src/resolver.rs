@@ -52,7 +52,7 @@ impl Resolver {
         scope.insert(name.lexeme.clone(), true);
     }
 
-    fn resolve_local(&self, expr: &Expr, name: &Token) {
+    fn resolve_local(&mut self, expr: &Expr, name: &Token) {
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);

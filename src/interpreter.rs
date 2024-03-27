@@ -3,7 +3,7 @@ use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::function::{Function, NativeFunction};
 use crate::stmt::Stmt;
-use crate::token::TokenType;
+use crate::token::{Token, TokenType};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
@@ -141,7 +141,16 @@ impl Interpreter {
         self.environment = previous;
         Ok(())
     }
-    pub fn resolve(&self, expr: &Expr, depth: usize) {}
+    pub fn resolve(&mut self, expr: &Expr, depth: usize) {
+        self.locals.insert(expr.clone(), depth);
+    }
+    fn look_up_variable(&mut self, name: Token, expr: &Expr) {
+        let distance = self.locals.get(expr);
+        if distance.is_some() {
+            return self.environment.borrow_mut().get_at(distance, name.lexeme);
+        }
+        self.globals.borrow().get(name)
+    }
 }
 
 impl Visitor<Object, ()> for Interpreter {
@@ -322,7 +331,7 @@ impl Visitor<Object, ()> for Interpreter {
                 }
             }
             Expr::Variable { name } => {
-                let value = self.environment.borrow().get(name.clone())?;
+                let value = self.look_up_variable();
                 Ok(value.clone())
             }
         }
