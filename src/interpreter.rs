@@ -144,12 +144,12 @@ impl Interpreter {
     pub fn resolve(&mut self, expr: &Expr, depth: usize) {
         self.locals.insert(expr.clone(), depth);
     }
-    fn look_up_variable(&mut self, name: Token, expr: &Expr) {
+    fn look_up_variable(&mut self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
         let distance = self.locals.get(expr);
-        if distance.is_some() {
-            return self.environment.borrow_mut().get_at(distance, name.lexeme);
+        if let Some(d) = distance {
+            return self.environment.borrow().get_at(*d, name.lexeme.clone());
         }
-        self.globals.borrow().get(name)
+        self.globals.borrow().get(name.clone())
     }
 }
 
@@ -330,10 +330,7 @@ impl Visitor<Object, ()> for Interpreter {
                     _ => Ok(Object::Nil),
                 }
             }
-            Expr::Variable { name } => {
-                let value = self.look_up_variable();
-                Ok(value.clone())
-            }
+            Expr::Variable { name } => self.look_up_variable(name, e),
         }
     }
     fn visit_stmt(&mut self, s: &Stmt) -> Result<(), RuntimeError> {

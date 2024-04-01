@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{error::RuntimeError, interpreter::Object, token::Token};
 
@@ -41,7 +41,7 @@ impl Environment {
 
         match &self.enclosing {
             Some(e) => {
-                e.borrow_mut().assign(name, value)?;
+                e.as_ref().borrow_mut().assign(name, value)?;
                 Ok(())
             }
             None => Err(RuntimeError::new(
@@ -54,6 +54,25 @@ impl Environment {
 
     pub fn define(&mut self, name: String, value: Object) -> () {
         self.values.insert(name, value);
+    }
+
+    pub fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
+        let mut environment = Rc::new(RefCell::new(self.clone()));
+        for i in 0..distance {
+            let enclosing = environment;
+            environment = enclosing;
+        }
+        environment
+    }
+
+    pub fn get_at(&self, distance: usize, name: String) -> Result<Object, RuntimeError> {
+        let binding = self.ancestor(distance);
+        let binding = binding.borrow();
+        let fuck = binding.values.get(&name);
+        if let Some(o) = fuck {
+            return Ok(o.clone());
+        }
+        panic!()
     }
 }
 
