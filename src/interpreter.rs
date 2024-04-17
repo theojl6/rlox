@@ -157,10 +157,21 @@ impl Visitor<Object, ()> for Interpreter {
     fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
-                let value = self.visit_expr(value)?;
-                let v = value.clone();
-                self.environment.borrow_mut().assign(name.clone(), v)?;
-                Ok(value)
+                let object = self.visit_expr(value)?;
+
+                let distance = self.locals.get(value);
+                if distance.is_some() {
+                    self.environment.borrow_mut().assign_at(
+                        *distance.unwrap(),
+                        name.clone(),
+                        object.clone(),
+                    );
+                } else {
+                    let v = object.clone();
+                    self.environment.borrow_mut().assign(name.clone(), v)?;
+                }
+
+                Ok(object)
             }
             Expr::Binary {
                 left,
