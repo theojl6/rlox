@@ -7,20 +7,22 @@ use crate::interpreter::Interpreter;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
-pub struct Resolver {
-    interpreter: Interpreter,
+pub struct Resolver<'a> {
+    interpreter: &'a mut Interpreter,
     scopes: Vec<HashMap<String, bool>>,
+    current_function: FunctionType,
 }
 
-impl Resolver {
-    pub fn new(&self, interpreter: Interpreter) -> Resolver {
+impl<'a> Resolver<'a> {
+    pub fn new(interpreter: &'a mut Interpreter) -> Resolver {
         Resolver {
             interpreter,
             scopes: Vec::new(),
+            current_function: FunctionType::None,
         }
     }
 
-    fn resolve_stmts(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
+    pub fn resolve_stmts(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
         for statement in statements {
             self.visit_stmt(statement)?;
         }
@@ -35,13 +37,21 @@ impl Resolver {
         self.scopes.pop();
     }
 
-    fn declare(&mut self, name: &Token) {
+    fn declare(&mut self, name: &Token) -> Result<(), RuntimeError> {
         if self.scopes.is_empty() {
-            return;
+            return Ok(());
         }
         let mut scope = self.scopes.pop().unwrap();
+        if scope.contains_key(&name.lexeme) {
+            return Err(RuntimeError::new(
+                name.clone(),
+                &"Already a variable with this name in this scope.",
+                None,
+            ));
+        }
         scope.insert(name.lexeme.clone(), false);
         self.scopes.push(scope);
+        Ok(())
     }
 
     fn define(&mut self, name: &Token) {
@@ -60,11 +70,15 @@ impl Resolver {
             }
         }
     }
-    fn resolve_function(&mut self, stmt: &Stmt) -> Result<(), RuntimeError> {
+    fn resolve_function(
+        &mut self,
+        stmt: &Stmt,
+        function_type: FunctionType,
+    ) -> Result<(), RuntimeError> {
         if let Stmt::Function { name, params, body } = stmt {
             self.begin_scope();
             for param in params {
-                self.declare(param);
+                self.declare(param)?;
                 self.define(param);
             }
             self.resolve_stmts(body)?;
@@ -74,7 +88,7 @@ impl Resolver {
     }
 }
 
-impl Visitor<(), ()> for Resolver {
+impl<'a> Visitor<(), ()> for Resolver<'a> {
     fn visit_expr(&mut self, e: &Expr) -> Result<(), RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
@@ -155,9 +169,9 @@ impl Visitor<(), ()> for Resolver {
                 params: _,
                 body: _,
             } => {
-                self.declare(name);
+                self.declare(name)?;
                 self.define(name);
-                self.resolve_function(s)?;
+                self.resolve_function(s, FunctionType::Function)?;
                 Ok(())
             }
             Stmt::If {
@@ -175,7 +189,7 @@ impl Visitor<(), ()> for Resolver {
             Stmt::Print(e) => self.visit_expr(e),
             Stmt::Return { keyword, value } => todo!(),
             Stmt::Var { name, initializer } => {
-                self.declare(name);
+                self.declare(name)?;
                 if let Some(i) = initializer {
                     self.visit_expr(&i)?;
                 }
@@ -189,4 +203,9 @@ impl Visitor<(), ()> for Resolver {
             }
         }
     }
+}
+
+enum FunctionType {
+    None,
+    Function,
 }

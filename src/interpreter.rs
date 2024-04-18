@@ -119,9 +119,9 @@ impl Interpreter {
             locals: HashMap::new(),
         }
     }
-    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> () {
+    pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> () {
         for stmt in stmts {
-            let _ = self.visit_stmt(&stmt);
+            let _ = self.visit_stmt(stmt);
         }
     }
     pub fn interpret_block(

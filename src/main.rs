@@ -21,6 +21,7 @@ use crate::ast::AstPrinter;
 use crate::error::RuntimeError;
 use crate::interpreter::Interpreter;
 use crate::parser::Parser;
+use crate::resolver::Resolver;
 use crate::scanner::Scanner;
 
 fn main() {
@@ -76,7 +77,9 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_m
                 let mut ast_printer = AstPrinter;
                 ast_printer.print(stmts.clone());
             }
-            interpreter.interpret(stmts);
+            let mut resolver = Resolver::new(&mut interpreter);
+            let _ = resolver.resolve_stmts(&stmts);
+            interpreter.interpret(&stmts);
         }
         Err(e) => {
             *had_error = true;
