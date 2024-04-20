@@ -76,6 +76,8 @@ impl<'a> Resolver<'a> {
         function_type: FunctionType,
     ) -> Result<(), RuntimeError> {
         if let Stmt::Function { name, params, body } = stmt {
+            let enclosing_function = self.current_function.clone();
+            self.current_function = function_type;
             self.begin_scope();
             for param in params {
                 self.declare(param)?;
@@ -83,6 +85,7 @@ impl<'a> Resolver<'a> {
             }
             self.resolve_stmts(body)?;
             self.end_scope();
+            self.current_function = enclosing_function;
         }
         Ok(())
     }
@@ -187,7 +190,17 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 Ok(())
             }
             Stmt::Print(e) => self.visit_expr(e),
-            Stmt::Return { keyword, value } => todo!(),
+            Stmt::Return { keyword, value } => {
+                if self.current_function == FunctionType::None {
+                    return Err(RuntimeError::new(
+                        keyword.clone(),
+                        "Can't return from top-level code.",
+                        None,
+                    ));
+                }
+                self.visit_expr(value)?;
+                Ok(())
+            }
             Stmt::Var { name, initializer } => {
                 self.declare(name)?;
                 if let Some(i) = initializer {
@@ -205,6 +218,7 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
     }
 }
 
+#[derive(Clone, PartialEq)]
 enum FunctionType {
     None,
     Function,

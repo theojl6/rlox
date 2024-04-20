@@ -78,7 +78,9 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_m
                 ast_printer.print(stmts.clone());
             }
             let mut resolver = Resolver::new(&mut interpreter);
-            let _ = resolver.resolve_stmts(&stmts);
+            if let Err(e) = resolver.resolve_stmts(&stmts) {
+                *had_error = true;
+            }
             interpreter.interpret(&stmts);
         }
         Err(e) => {
