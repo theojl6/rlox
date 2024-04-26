@@ -161,11 +161,11 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 self.end_scope();
                 Ok(())
             }
-            Stmt::Class {
-                name,
-                superclass,
-                methods,
-            } => todo!(),
+            Stmt::Class { name, methods: _ } => {
+                self.declare(name)?;
+                self.define(name);
+                Ok(())
+            }
             Stmt::Expr(e) => self.visit_expr(e),
             Stmt::Function {
                 name,

@@ -88,6 +88,16 @@ impl<'a> Parser<'a> {
     }
 
     fn declaration(&mut self) -> Option<Stmt> {
+        if self.matches(&vec![TokenType::Class]) {
+            let declared_class = self.class_declaration();
+            match declared_class {
+                Ok(s) => return Some(s),
+                Err(_) => {
+                    self.synchronize();
+                    return None;
+                }
+            }
+        }
         if self.matches(&vec![TokenType::Fun]) {
             let declared_fun = self.function("function");
             match declared_fun {
@@ -116,6 +126,18 @@ impl<'a> Parser<'a> {
                 None
             }
         }
+    }
+
+    fn class_declaration(&mut self) -> Result<Stmt, SyntaxError> {
+        let name = self.consume(&TokenType::Identifier, "Expect class name")?;
+        self.consume(&TokenType::LeftBrace, "Expect '{' before class body.");
+
+        let mut methods = Vec::<Stmt>::new();
+        while !self.check(&TokenType::RightBrace) && !self.is_at_end() {
+            methods.push(self.function("method")?);
+        }
+        self.consume(&TokenType::RightBrace, "Expect '}' after class body.")?;
+        Ok(Stmt::Class { name, methods })
     }
 
     fn statement(&mut self) -> Result<Stmt, SyntaxError> {
