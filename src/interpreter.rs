@@ -1,4 +1,5 @@
 use crate::ast::{Expr, Visitor};
+use crate::class::Class;
 use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::function::{Function, NativeFunction};
@@ -13,6 +14,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone)]
 pub enum Object {
+    Class(Class),
     String(String),
     Number(f32),
     Bool(bool),
@@ -27,6 +29,7 @@ impl Hash for Object {
             Object::String(s) => s.hash(state),
             Object::Number(n) => n.to_bits().hash(state),
             Object::Bool(b) => b.hash(state),
+            Object::Class(c) => self.hash(state),
             Object::Nil => self.hash(state),
             Object::Function(f) => f.hash(state),
             Object::NativeFunction(f) => f.hash(state),
@@ -51,6 +54,9 @@ impl fmt::Display for Object {
         match self {
             Object::Bool(b) => {
                 write!(f, "{:}", b)
+            }
+            Object::Class(c) => {
+                write!(f, "{:}", c.to_string())
             }
             Object::String(s) => {
                 write!(f, "{:}", s)
@@ -400,6 +406,13 @@ impl Visitor<Object, ()> for Interpreter {
                         &(self.environment),
                     ))))),
                 )?;
+            }
+            Stmt::Class { name, methods } => {
+                self.environment
+                    .borrow_mut()
+                    .define(name.lexeme.clone(), Object::Nil);
+                let klass = Object::Class(Class::new(name.lexeme.clone()));
+                self.environment.borrow_mut().assign(name.clone(), klass)?;
             }
             Stmt::While { condition, body } => {
                 while is_truthy(&self.visit_expr(condition)?) {

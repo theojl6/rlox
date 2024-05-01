@@ -153,6 +153,7 @@ impl Visitor<String, String> for AstPrinter {
                 Object::Bool(b) => {
                     ast.push_str(&b.to_string());
                 }
+                Object::Class(c) => ast.push_str(&"Class"),
                 Object::Nil => {
                     ast.push_str(&"nil");
                 }

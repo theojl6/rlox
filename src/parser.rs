@@ -130,7 +130,7 @@ impl<'a> Parser<'a> {
 
     fn class_declaration(&mut self) -> Result<Stmt, SyntaxError> {
         let name = self.consume(&TokenType::Identifier, "Expect class name")?;
-        self.consume(&TokenType::LeftBrace, "Expect '{' before class body.");
+        self.consume(&TokenType::LeftBrace, "Expect '{' before class body.")?;
 
         let mut methods = Vec::<Stmt>::new();
         while !self.check(&TokenType::RightBrace) && !self.is_at_end() {

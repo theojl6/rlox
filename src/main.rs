@@ -5,6 +5,7 @@ use std::process;
 use std::usize;
 
 mod ast;
+mod class;
 mod environment;
 mod error;
 mod function;
