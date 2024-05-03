@@ -9,6 +9,7 @@ mod class;
 mod environment;
 mod error;
 mod function;
+mod instance;
 mod interpreter;
 mod parser;
 mod resolver;

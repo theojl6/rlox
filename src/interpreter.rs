@@ -3,6 +3,7 @@ use crate::class::Class;
 use crate::environment::Environment;
 use crate::error::RuntimeError;
 use crate::function::{Function, NativeFunction};
+use crate::instance::Instance;
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 use std::cell::RefCell;
@@ -15,6 +16,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 #[derive(Debug, Clone)]
 pub enum Object {
     Class(Class),
+    Instance(Instance),
     String(String),
     Number(f32),
     Bool(bool),
@@ -30,6 +32,7 @@ impl Hash for Object {
             Object::Number(n) => n.to_bits().hash(state),
             Object::Bool(b) => b.hash(state),
             Object::Class(c) => self.hash(state),
+            Object::Instance(i) => self.hash(state),
             Object::Nil => self.hash(state),
             Object::Function(f) => f.hash(state),
             Object::NativeFunction(f) => f.hash(state),
@@ -56,7 +59,10 @@ impl fmt::Display for Object {
                 write!(f, "{:}", b)
             }
             Object::Class(c) => {
-                write!(f, "{:}", c.to_string())
+                write!(f, "{:}", c)
+            }
+            Object::Instance(i) => {
+                write!(f, "{:}", i)
             }
             Object::String(s) => {
                 write!(f, "{:}", s)
@@ -302,6 +308,20 @@ impl Visitor<Object, ()> for Interpreter {
                             ));
                         }
                         func.call(self, arguments)
+                    }
+                    Object::Class(class) => {
+                        if arguments.len() != class.arity() {
+                            return Err(RuntimeError::new(
+                                p.clone(),
+                                &("Expected ".to_owned()
+                                    + &class.arity().to_string()
+                                    + " arguments but got "
+                                    + &arguments.len().to_string()
+                                    + "."),
+                                None,
+                            ));
+                        }
+                        class.call(self, arguments)
                     }
                     _ => Err(RuntimeError::new(
                         p.clone(),
