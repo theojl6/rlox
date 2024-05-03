@@ -330,7 +330,17 @@ impl Visitor<Object, ()> for Interpreter {
                     )),
                 }
             }
-
+            Expr::Get { object, name } => {
+                let object = self.visit_expr(&object)?;
+                if let Object::Instance(i) = object {
+                    return i.get(name);
+                }
+                Err(RuntimeError::new(
+                    name.clone(),
+                    "Only instances have properties.",
+                    None,
+                ))
+            }
             Expr::Grouping { expression } => self.visit_expr(expression),
             Expr::Literal { value } => Ok(value.clone()),
             Expr::Logical {

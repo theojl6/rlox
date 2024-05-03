@@ -120,6 +120,10 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 }
                 Ok(())
             }
+            Expr::Get { object, name: _ } => {
+                self.visit_expr(&object)?;
+                Ok(())
+            }
             Expr::Grouping { expression } => self.visit_expr(expression),
             Expr::Literal { value: _ } => Ok(()),
             Expr::Logical {

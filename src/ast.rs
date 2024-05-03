@@ -18,6 +18,10 @@ pub enum Expr {
         paren: Token,
         arguments: Vec<Box<Expr>>,
     },
+    Get {
+        object: Box<Expr>,
+        name: Token,
+    },
     Grouping {
         expression: Box<Expr>,
     },
@@ -58,6 +62,7 @@ impl Hash for Expr {
                 paren,
                 arguments,
             } => todo!(),
+            Expr::Get { object, name } => todo!(),
             Expr::Grouping { expression } => todo!(),
             Expr::Literal { value } => todo!(),
             Expr::Logical {
@@ -138,6 +143,10 @@ impl Visitor<String, String> for AstPrinter {
                     .collect();
 
                 self.parenthesize(&mut ast, callee, arguments)
+            }
+            Expr::Get { object, name } => {
+                let value = self.visit_expr(object)?;
+                self.parenthesize(&mut ast, &"get", vec![name.lexeme.clone(), value]);
             }
             Expr::Grouping { expression } => {
                 let expr = self.visit_expr(expression)?;

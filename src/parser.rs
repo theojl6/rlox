@@ -495,6 +495,13 @@ impl<'a> Parser<'a> {
         loop {
             if self.matches(&vec![TokenType::LeftParen]) {
                 expr = self.finish_call(&expr)?;
+            } else if self.matches(&vec![TokenType::Dot]) {
+                let name =
+                    self.consume(&TokenType::Identifier, "Expect propery name after '.'.")?;
+                expr = Expr::Get {
+                    object: Box::new(expr),
+                    name,
+                }
             } else {
                 break;
             }
