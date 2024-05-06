@@ -33,6 +33,11 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Set {
+        object: Box<Expr>,
+        name: Token,
+        value: Box<Expr>,
+    },
     Unary {
         operator: Token,
         right: Box<Expr>,
@@ -69,6 +74,11 @@ impl Hash for Expr {
                 left,
                 operator,
                 right,
+            } => todo!(),
+            Expr::Set {
+                object,
+                name,
+                value,
             } => todo!(),
             Expr::Unary { operator, right } => todo!(),
             Expr::Variable { name } => todo!(),
@@ -188,6 +198,13 @@ impl Visitor<String, String> for AstPrinter {
                 let left_expr = self.visit_expr(left)?;
                 let right_expr = self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![left_expr, right_expr]);
+            }
+            Expr::Set {
+                object,
+                name,
+                value,
+            } => {
+                todo!()
             }
             Expr::Unary { operator, right } => {
                 let expr = self.visit_expr(right)?;

@@ -25,6 +25,10 @@ impl Instance {
             None,
         ))
     }
+
+    pub fn set(&mut self, name: &Token, value: Object) {
+        self.fields.insert(name.lexeme.clone(), value);
+    }
 }
 
 impl fmt::Display for Instance {

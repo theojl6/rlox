@@ -46,6 +46,13 @@ impl<'a> Parser<'a> {
                         value: Box::new(v),
                     });
                 }
+                Expr::Get { object, name } => {
+                    return Ok(Expr::Set {
+                        object,
+                        name: name.clone(),
+                        value: Box::new(v),
+                    });
+                }
                 _ => {
                     return Err(SyntaxError::new(
                         equals.clone(),

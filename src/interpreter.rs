@@ -361,6 +361,23 @@ impl Visitor<Object, ()> for Interpreter {
                 }
                 self.visit_expr(right)
             }
+            Expr::Set {
+                object,
+                name,
+                value,
+            } => {
+                let object = self.visit_expr(&object)?;
+                if let Object::Instance(mut i) = object {
+                    let value = self.visit_expr(value)?;
+                    i.set(name, value.clone());
+                    return Ok(value);
+                }
+                Err(RuntimeError::new(
+                    name.clone(),
+                    "Only instances have fields.",
+                    None,
+                ))
+            }
 
             Expr::Unary { operator, right } => {
                 let obj: Object = self.visit_expr(right)?;

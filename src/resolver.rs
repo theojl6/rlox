@@ -135,6 +135,15 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 self.visit_expr(right)?;
                 Ok(())
             }
+            Expr::Set {
+                object,
+                name: _,
+                value,
+            } => {
+                self.visit_expr(value)?;
+                self.visit_expr(object)?;
+                Ok(())
+            }
             Expr::Unary { operator: _, right } => self.visit_expr(right),
             Expr::Variable { name } => {
                 if !self.scopes.is_empty()
