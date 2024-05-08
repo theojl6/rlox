@@ -19,6 +19,10 @@ impl Instance {
         if self.fields.contains_key(&name.lexeme) {
             return Ok(self.fields.get(&name.lexeme).unwrap().clone());
         }
+        let method = self.klass.find_method(name.lexeme.clone());
+        if let Some(m) = method {
+            return Ok(Object::Function(Box::new(m)));
+        }
         Err(RuntimeError::new(
             name.clone(),
             &format!("Undefined property '{}'.", &name.lexeme),

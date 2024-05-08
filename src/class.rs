@@ -1,21 +1,24 @@
+use std::collections::HashMap;
 use std::fmt;
 
 use crate::error::RuntimeError;
+use crate::function::Function;
 use crate::instance::Instance;
 use crate::interpreter::{Callable, Interpreter, Object};
 
 #[derive(Clone, Debug)]
 pub struct Class {
     pub name: String,
+    methods: HashMap<String, Function>,
 }
 
 impl Class {
-    pub fn new(name: String) -> Self {
-        Class { name }
+    pub fn new(name: String, methods: HashMap<String, Function>) -> Self {
+        Class { name, methods }
     }
 
-    pub fn to_string(&self) -> String {
-        self.name.clone()
+    pub fn find_method(&self, name: String) -> Option<Function> {
+        return self.methods.get(&name).cloned();
     }
 }
 

@@ -454,11 +454,27 @@ impl Visitor<Object, ()> for Interpreter {
                     ))))),
                 )?;
             }
-            Stmt::Class { name, methods } => {
+            Stmt::Class {
+                name,
+                methods: stmt_methods,
+            } => {
                 self.environment
                     .borrow_mut()
                     .define(name.lexeme.clone(), Object::Nil);
-                let klass = Object::Class(Class::new(name.lexeme.clone()));
+                let mut methods = HashMap::new();
+                for method in stmt_methods {
+                    let function = Function::new(method.clone(), Rc::clone(&self.environment));
+                    if let Stmt::Function {
+                        name,
+                        params: _,
+                        body: _,
+                    } = method
+                    {
+                        methods.insert(name.lexeme.clone(), function);
+                    }
+                }
+
+                let klass = Object::Class(Class::new(name.lexeme.clone(), methods));
                 self.environment.borrow_mut().assign(name.clone(), klass)?;
             }
             Stmt::While { condition, body } => {

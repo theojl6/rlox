@@ -174,9 +174,13 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 self.end_scope();
                 Ok(())
             }
-            Stmt::Class { name, methods: _ } => {
+            Stmt::Class { name, methods } => {
                 self.declare(name)?;
                 self.define(name);
+
+                for method in methods {
+                    self.resolve_function(method, FunctionType::Method)?;
+                }
                 Ok(())
             }
             Stmt::Expr(e) => self.visit_expr(e),
@@ -235,4 +239,5 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
 enum FunctionType {
     None,
     Function,
+    Method,
 }
