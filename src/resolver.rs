@@ -144,6 +144,10 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 self.visit_expr(object)?;
                 Ok(())
             }
+            Expr::This { keyword } => {
+                self.resolve_local(e, keyword);
+                Ok(())
+            }
             Expr::Unary { operator: _, right } => self.visit_expr(right),
             Expr::Variable { name } => {
                 if !self.scopes.is_empty()
@@ -178,9 +182,17 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
                 self.declare(name)?;
                 self.define(name);
 
+                self.begin_scope();
+                let mut scope = self.scopes.pop().unwrap();
+                scope.insert("this".into(), true);
+                self.scopes.push(scope);
+                println!("visit class stmt {:?}", self.scopes);
+
                 for method in methods {
                     self.resolve_function(method, FunctionType::Method)?;
                 }
+
+                self.end_scope();
                 Ok(())
             }
             Stmt::Expr(e) => self.visit_expr(e),

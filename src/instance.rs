@@ -1,5 +1,5 @@
 use crate::{class::Class, error::RuntimeError, interpreter::Object, token::Token};
-use std::{collections::HashMap, fmt};
+use std::{borrow::BorrowMut, collections::HashMap, fmt};
 
 #[derive(Clone, Debug)]
 pub struct Instance {
@@ -20,8 +20,10 @@ impl Instance {
             return Ok(self.fields.get(&name.lexeme).unwrap().clone());
         }
         let method = self.klass.find_method(name.lexeme.clone());
-        if let Some(m) = method {
-            return Ok(Object::Function(Box::new(m)));
+        if let Some(mut m) = method {
+            return Ok(Object::Function(Box::new(
+                m.borrow_mut().bind(self.clone()),
+            )));
         }
         Err(RuntimeError::new(
             name.clone(),

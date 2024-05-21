@@ -1,5 +1,5 @@
 use crate::ast::Expr;
-use crate::error::{RuntimeError, SyntaxError};
+use crate::error::SyntaxError;
 use crate::interpreter::Object;
 use crate::lox_error;
 use crate::stmt::Stmt;
@@ -533,6 +533,11 @@ impl<'a> Parser<'a> {
         if self.matches(&vec![TokenType::Number, TokenType::String]) {
             return Ok(Expr::Literal {
                 value: self.previous().literal.expect("No literal found in token"),
+            });
+        }
+        if self.matches(&vec![TokenType::This]) {
+            return Ok(Expr::This {
+                keyword: self.previous(),
             });
         }
         if self.matches(&vec![TokenType::Identifier]) {

@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use crate::environment::Environment;
 use crate::error::RuntimeError;
+use crate::instance::Instance;
 use crate::interpreter::{Callable, Interpreter, Object};
 use crate::stmt::Stmt;
 
@@ -28,6 +29,16 @@ impl Function {
             };
         }
         panic!("Function implemented without declaration")
+    }
+
+    pub fn bind(&self, instance: Instance) -> Function {
+        let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
+            &self.closure,
+        )))));
+        environment
+            .borrow_mut()
+            .define("this".into(), Object::Instance(instance));
+        return Function::new(self.declaration.clone(), environment);
     }
 }
 

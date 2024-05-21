@@ -378,6 +378,7 @@ impl Visitor<Object, ()> for Interpreter {
                     None,
                 ))
             }
+            Expr::This { keyword } => self.look_up_variable(keyword, e),
 
             Expr::Unary { operator, right } => {
                 let obj: Object = self.visit_expr(right)?;

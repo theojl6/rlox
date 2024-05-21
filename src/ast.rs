@@ -38,6 +38,9 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    This {
+        keyword: Token,
+    },
     Unary {
         operator: Token,
         right: Box<Expr>,
@@ -80,8 +83,9 @@ impl Hash for Expr {
                 name,
                 value,
             } => todo!(),
+            Expr::This { keyword } => keyword.hash(state),
             Expr::Unary { operator, right } => todo!(),
-            Expr::Variable { name } => todo!(),
+            Expr::Variable { name } => name.hash(state),
         }
     }
 }
@@ -206,6 +210,7 @@ impl Visitor<String, String> for AstPrinter {
             } => {
                 todo!()
             }
+            Expr::This { keyword } => todo!(),
             Expr::Unary { operator, right } => {
                 let expr = self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![expr]);

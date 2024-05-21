@@ -66,7 +66,10 @@ impl Environment {
     }
 
     pub fn get_at(&self, distance: usize, name: String) -> Result<Object, RuntimeError> {
+        println!("get_at distance: {}", distance);
+        println!("get_at name: {}", name);
         let binding = self.ancestor(distance);
+        println!("binding: {:?}", binding);
         let binding = binding.borrow();
         let object = binding.values.get(&name);
         if let Some(o) = object {
