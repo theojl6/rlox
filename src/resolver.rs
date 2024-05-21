@@ -50,7 +50,9 @@ impl<'a> Resolver<'a> {
             ));
         }
         scope.insert(name.lexeme.clone(), false);
+        println!("declare scope: {:?}", scope);
         self.scopes.push(scope);
+        println!("declare self.scopes: {:?}", self.scopes);
         Ok(())
     }
 
@@ -63,6 +65,7 @@ impl<'a> Resolver<'a> {
     }
 
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
+        println!("resolve_local: {:?}", self.scopes);
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);
@@ -76,9 +79,11 @@ impl<'a> Resolver<'a> {
         function_type: FunctionType,
     ) -> Result<(), RuntimeError> {
         if let Stmt::Function { name, params, body } = stmt {
+            println!("resolve_function stmt {:?}", stmt);
             let enclosing_function = self.current_function.clone();
             self.current_function = function_type;
             self.begin_scope();
+            println!("resolve_function params {:?}", params);
             for param in params {
                 self.declare(param)?;
                 self.define(param);
@@ -150,6 +155,7 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
             }
             Expr::Unary { operator: _, right } => self.visit_expr(right),
             Expr::Variable { name } => {
+                println!("resolve: visit variable stmt {:?}", name);
                 if !self.scopes.is_empty()
                     && self
                         .scopes
