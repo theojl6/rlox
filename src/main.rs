@@ -79,10 +79,11 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_m
                 let mut ast_printer = AstPrinter;
                 ast_printer.print(stmts.clone());
             }
-            let mut resolver = Resolver::new(&mut interpreter);
+            let mut resolver = Resolver::new(interpreter);
             if let Err(e) = resolver.resolve_stmts(&stmts) {
                 *had_error = true;
             }
+            interpreter = resolver.interpreter;
             interpreter.interpret(&stmts);
         }
         Err(e) => {

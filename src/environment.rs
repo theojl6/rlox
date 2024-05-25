@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{borrow::Borrow, cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{error::RuntimeError, interpreter::Object, token::Token};
 
@@ -21,7 +21,7 @@ impl Environment {
             Some(o) => Ok(o),
             None => match &self.enclosing {
                 Some(e) => {
-                    let enc = e.borrow();
+                    let enc = e.borrow_mut();
                     enc.get(name)
                 }
                 None => Err(RuntimeError::new(
@@ -56,11 +56,15 @@ impl Environment {
         self.values.insert(name, value);
     }
 
-    pub fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
-        let mut environment = Rc::new(RefCell::new(self.clone()));
+    pub fn ancestor(&self, distance: usize) -> Environment {
+        let mut environment = self.clone();
+        println!("looking up ancestor at distance {}", distance);
         for _ in 0..distance {
-            let enclosing = environment;
+            // TODO: optimize this without cloning the whole environment...
+            let enclosing = <RefCell<Environment> as Clone>::clone(&environment.enclosing.unwrap())
+                .into_inner();
             environment = enclosing;
+            println!("hopped ancestor");
         }
         environment
     }
@@ -68,10 +72,9 @@ impl Environment {
     pub fn get_at(&self, distance: usize, name: String) -> Result<Object, RuntimeError> {
         println!("get_at distance: {}", distance);
         println!("get_at name: {}", name);
-        let binding = self.ancestor(distance);
-        println!("binding: {:?}", binding);
-        let binding = binding.borrow();
-        let object = binding.values.get(&name);
+        let ancestor = self.ancestor(distance);
+        println!("ancestor at distance {}: {:?}", distance, ancestor);
+        let object = ancestor.values.get(&name);
         if let Some(o) = object {
             return Ok(o.clone());
         }
@@ -79,10 +82,7 @@ impl Environment {
     }
 
     pub fn assign_at(&mut self, distance: usize, name: Token, value: Object) {
-        self.ancestor(distance)
-            .borrow_mut()
-            .values
-            .insert(name.lexeme, value);
+        self.ancestor(distance).values.insert(name.lexeme, value);
     }
 }
 

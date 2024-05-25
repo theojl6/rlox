@@ -7,14 +7,14 @@ use crate::interpreter::Interpreter;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
-pub struct Resolver<'a> {
-    interpreter: &'a mut Interpreter,
+pub struct Resolver {
+    pub interpreter: Interpreter,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
 }
 
-impl<'a> Resolver<'a> {
-    pub fn new(interpreter: &'a mut Interpreter) -> Resolver {
+impl Resolver {
+    pub fn new(interpreter: Interpreter) -> Resolver {
         Resolver {
             interpreter,
             scopes: Vec::new(),
@@ -39,9 +39,11 @@ impl<'a> Resolver<'a> {
 
     fn declare(&mut self, name: &Token) -> Result<(), RuntimeError> {
         if self.scopes.is_empty() {
+            println!("self.scopes.is_empty");
             return Ok(());
         }
         let mut scope = self.scopes.pop().unwrap();
+        println!("declare popped scope{:?}", scope);
         if scope.contains_key(&name.lexeme) {
             return Err(RuntimeError::new(
                 name.clone(),
@@ -50,7 +52,7 @@ impl<'a> Resolver<'a> {
             ));
         }
         scope.insert(name.lexeme.clone(), false);
-        println!("declare scope: {:?}", scope);
+        println!("declare scope after insert: {:?}", scope);
         self.scopes.push(scope);
         println!("declare self.scopes: {:?}", self.scopes);
         Ok(())
@@ -62,6 +64,7 @@ impl<'a> Resolver<'a> {
         }
         let mut scope = self.scopes.pop().unwrap();
         scope.insert(name.lexeme.clone(), true);
+        self.scopes.push(scope);
     }
 
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
@@ -96,7 +99,7 @@ impl<'a> Resolver<'a> {
     }
 }
 
-impl<'a> Visitor<(), ()> for Resolver<'a> {
+impl<'a> Visitor<(), ()> for Resolver {
     fn visit_expr(&mut self, e: &Expr) -> Result<(), RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
@@ -155,7 +158,7 @@ impl<'a> Visitor<(), ()> for Resolver<'a> {
             }
             Expr::Unary { operator: _, right } => self.visit_expr(right),
             Expr::Variable { name } => {
-                println!("resolve: visit variable stmt {:?}", name);
+                println!("resolver: visit variable stmt {:?}", name);
                 if !self.scopes.is_empty()
                     && self
                         .scopes
