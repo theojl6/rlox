@@ -64,27 +64,53 @@ impl Hash for Expr {
                 left,
                 operator,
                 right,
-            } => todo!(),
+            } => {
+                left.hash(state);
+                operator.hash(state);
+                right.hash(state);
+            }
             Expr::Call {
                 callee,
                 paren,
                 arguments,
-            } => todo!(),
-            Expr::Get { object, name } => todo!(),
-            Expr::Grouping { expression } => todo!(),
-            Expr::Literal { value } => todo!(),
+            } => {
+                callee.hash(state);
+                paren.hash(state);
+                arguments.hash(state);
+            }
+            Expr::Get { object, name } => {
+                object.hash(state);
+                name.hash(state);
+            }
+            Expr::Grouping { expression } => {
+                expression.hash(state);
+            }
+            Expr::Literal { value } => {
+                value.hash(state);
+            }
             Expr::Logical {
                 left,
                 operator,
                 right,
-            } => todo!(),
+            } => {
+                left.hash(state);
+                operator.hash(state);
+                right.hash(state);
+            }
             Expr::Set {
                 object,
                 name,
                 value,
-            } => todo!(),
+            } => {
+                object.hash(state);
+                name.hash(state);
+                value.hash(state);
+            }
             Expr::This { keyword } => keyword.hash(state),
-            Expr::Unary { operator, right } => todo!(),
+            Expr::Unary { operator, right } => {
+                operator.hash(state);
+                right.hash(state);
+            }
             Expr::Variable { name } => name.hash(state),
         }
     }

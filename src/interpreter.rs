@@ -161,6 +161,7 @@ impl Interpreter {
         println!("look_up_variable {:?}", self.locals);
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
+            println!("found variable at distance {}", d);
             return self.environment.borrow().get_at(*d, name.lexeme.clone());
         }
         self.globals.borrow().get(name.clone())
