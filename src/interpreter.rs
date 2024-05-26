@@ -141,7 +141,7 @@ impl Interpreter {
         stmts: &Vec<Stmt>,
         environment: Rc<RefCell<Environment>>,
     ) -> Result<(), RuntimeError> {
-        let previous = self.environment.clone();
+        let previous = Rc::clone(&self.environment);
         self.environment = environment;
         for stmt in stmts {
             let s = self.visit_stmt(&stmt);

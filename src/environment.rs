@@ -1,13 +1,12 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{environment, error::RuntimeError, interpreter::Object, token::Token};
+use crate::{error::RuntimeError, interpreter::Object, token::Token};
 
 #[derive(Debug, Clone)]
 pub struct Environment {
     pub enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Object>,
 }
-
 impl Environment {
     pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Environment {
@@ -76,13 +75,18 @@ impl Environment {
         println!("get_at distance: {}", distance);
         println!("get_at name: {}", name);
         if distance == 0 {
+            println!("distance is 0, getting from self");
             return Ok(self.values.get(&name).unwrap().clone());
         } else {
+            println!("distance is some, getting from ancestor");
             let ancestor = self.ancestor(distance);
             let ancestor = ancestor.borrow_mut();
+            println!("ancestor.values: {:?}", ancestor.values);
             let object = ancestor.values.get(&name);
             if let Some(o) = object {
                 return Ok(o.clone());
+            } else {
+                println!("cannot get object");
             }
         }
         panic!()
