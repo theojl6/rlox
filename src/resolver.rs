@@ -39,7 +39,7 @@ impl Resolver {
 
     fn declare(&mut self, name: &Token) -> Result<(), RuntimeError> {
         if self.scopes.is_empty() {
-            println!("self.scopes.is_empty");
+            // println!("self.scopes.is_empty");
             return Ok(());
         }
         let mut scope = self.scopes.pop().unwrap();
@@ -68,7 +68,7 @@ impl Resolver {
     }
 
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
-        println!("resolve_local: {:?}", self.scopes);
+        println!("resolve_local scopes: {:?}", self.scopes);
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);

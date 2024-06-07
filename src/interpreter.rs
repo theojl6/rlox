@@ -154,14 +154,14 @@ impl Interpreter {
         Ok(())
     }
     pub fn resolve(&mut self, expr: &Expr, depth: usize) {
-        println!("resolve: {:?}", expr);
+        // println!("resolve: {:?}", expr);
         self.locals.insert(expr.clone(), depth);
     }
     fn look_up_variable(&mut self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
-        println!("look_up_variable {:?}", self.locals);
+        // println!("look_up_variable {:?}", self.locals);
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
-            println!("found variable at distance {}", d);
+            // println!("found variable at distance {}", d);
             return self.environment.borrow().get_at(*d, name.lexeme.clone());
         }
         self.globals.borrow().get(name.clone())

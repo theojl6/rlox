@@ -58,8 +58,8 @@ impl Environment {
     fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
         let enclosing = self.enclosing.to_owned().expect("no enclosing environment");
         let mut environment = enclosing;
-        println!("looking up ancestor at distance {}", distance);
-        for _ in 0..distance {
+        // println!("looking up ancestor at distance {}", distance);
+        for _ in 0..(distance - 1) {
             let enclosing = environment
                 .borrow_mut()
                 .enclosing
@@ -72,16 +72,17 @@ impl Environment {
     }
 
     pub fn get_at(&self, distance: usize, name: String) -> Result<Object, RuntimeError> {
-        println!("get_at distance: {}", distance);
-        println!("get_at name: {}", name);
+        // println!("get_at distance: {}", distance);
+        // println!("get_at name: {}", name);
         if distance == 0 {
             println!("distance is 0, getting from self");
             return Ok(self.values.get(&name).unwrap().clone());
         } else {
             println!("distance is some, getting from ancestor");
+            println!("trying to get {} at distance {}", name, distance);
             let ancestor = self.ancestor(distance);
             let ancestor = ancestor.borrow_mut();
-            println!("ancestor.values: {:?}", ancestor.values);
+            println!("ancestor at distance {}: {:?}", distance, ancestor);
             let object = ancestor.values.get(&name);
             if let Some(o) = object {
                 return Ok(o.clone());
