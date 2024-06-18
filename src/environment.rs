@@ -140,4 +140,20 @@ mod tests {
         let obj = env.get(token);
         assert!(obj.is_err());
     }
+
+    #[test]
+    fn should_resolve_if_variable_is_in_enclosing_environment() {
+        let mut enclosing = Environment::new(None);
+        let bool_obj = Object::Bool(true);
+        enclosing.values.insert(String::from("test_key"), bool_obj);
+        let env = Environment::new(Some(Rc::new(RefCell::new(enclosing))));
+        let token = Token {
+            line: 0,
+            lexeme: String::from("test_key"),
+            literal: None,
+            token_type: TokenType::Identifier,
+        };
+        let obj = env.get(token).expect("Cannot find variable");
+        assert_eq!(obj, Object::Bool(true));
+    }
 }

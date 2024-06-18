@@ -262,3 +262,8 @@ enum FunctionType {
     Function,
     Method,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+}

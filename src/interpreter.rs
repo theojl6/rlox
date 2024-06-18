@@ -175,16 +175,17 @@ impl Visitor<Object, ()> for Interpreter {
                 let object = self.visit_expr(value)?;
 
                 let distance = self.locals.get(value);
-                if distance.is_some() {
-                    self.environment.borrow_mut().assign_at(
-                        *distance.unwrap(),
-                        name.clone(),
-                        object.clone(),
-                    );
-                } else {
-                    let v = object.clone();
-                    self.environment.borrow_mut().assign(name.clone(), v)?;
-                }
+                match distance {
+                    Some(d) => {
+                        self.environment
+                            .borrow_mut()
+                            .assign_at(*d, name.clone(), object.clone());
+                    }
+                    None => {
+                        let v = object.clone();
+                        self.environment.borrow_mut().assign(name.clone(), v)?;
+                    }
+                };
 
                 Ok(object)
             }
