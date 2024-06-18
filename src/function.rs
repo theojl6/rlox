@@ -35,9 +35,10 @@ impl Function {
         let environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
             &self.closure,
         )))));
-        environment
-            .borrow_mut()
-            .define("this".into(), Object::Instance(instance));
+        environment.borrow_mut().define(
+            "this".into(),
+            Rc::new(RefCell::new(Object::Instance(instance))),
+        );
         return Function::new(self.declaration.clone(), environment);
     }
 }
@@ -47,7 +48,7 @@ impl Callable for Function {
         &self,
         interpreter: &mut Interpreter,
         arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>
+    ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized,
     {
@@ -64,9 +65,10 @@ impl Callable for Function {
             for p in params {
                 let arg = arguments_iter
                     .next()
-                    .expect("Error mapping arguments to parameters")
-                    .clone();
-                environment.borrow_mut().define(p.lexeme.clone(), arg)
+                    .expect("Error mapping arguments to parameters");
+                environment
+                    .borrow_mut()
+                    .define(p.lexeme.clone(), Rc::new(RefCell::new(*arg)))
             }
             let result = interpreter.interpret_block(&body, environment);
 

@@ -5,7 +5,7 @@ use crate::{error::RuntimeError, interpreter::Object, token::Token};
 #[derive(Debug, Clone)]
 pub struct Environment {
     pub enclosing: Option<Rc<RefCell<Environment>>>,
-    values: HashMap<String, Object>,
+    values: HashMap<String, Rc<RefCell<Object>>>,
 }
 impl Environment {
     pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
@@ -15,9 +15,9 @@ impl Environment {
         }
     }
 
-    pub fn get(&self, name: Token) -> Result<Object, RuntimeError> {
+    pub fn get(&self, name: Token) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         match self.values.get(&name.lexeme) {
-            Some(o) => Ok(o.clone()),
+            Some(o) => Ok(*o),
             None => match &self.enclosing {
                 Some(e) => {
                     let enc = e.borrow_mut();
@@ -32,7 +32,7 @@ impl Environment {
         }
     }
 
-    pub fn assign(&mut self, name: Token, value: Object) -> Result<(), RuntimeError> {
+    pub fn assign(&mut self, name: Token, value: Rc<RefCell<Object>>) -> Result<(), RuntimeError> {
         if self.values.contains_key(&name.lexeme) {
             self.values.insert(name.lexeme, value);
             return Ok(());
@@ -51,7 +51,7 @@ impl Environment {
         }
     }
 
-    pub fn define(&mut self, name: String, value: Object) -> () {
+    pub fn define(&mut self, name: String, value: Rc<RefCell<Object>>) -> () {
         self.values.insert(name, value);
     }
 
@@ -71,7 +71,11 @@ impl Environment {
         environment
     }
 
-    pub fn get_at(&self, distance: usize, name: String) -> Result<Object, RuntimeError> {
+    pub fn get_at(
+        &self,
+        distance: usize,
+        name: String,
+    ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         // println!("get_at distance: {}", distance);
         // println!("get_at name: {}", name);
         if distance == 0 {
@@ -93,7 +97,7 @@ impl Environment {
         panic!()
     }
 
-    pub fn assign_at(&mut self, distance: usize, name: Token, value: Object) {
+    pub fn assign_at(&mut self, distance: usize, name: Token, value: Rc<RefCell<Object>>) {
         self.ancestor(distance)
             .borrow_mut()
             .values
@@ -109,7 +113,7 @@ mod tests {
     #[test]
     fn get_should_return_reference_if_exists() {
         let mut env = Environment::new(None);
-        let bool_obj = Object::Bool(true);
+        let bool_obj = Rc::new(RefCell::new(Object::Bool(true)));
         env.values.insert(String::from("test_key"), bool_obj);
         let token = Token {
             line: 0,
@@ -120,7 +124,7 @@ mod tests {
         let obj = env.get(token);
         match obj {
             Ok(o) => {
-                assert_eq!(o, Object::Bool(true));
+                assert_eq!(o, bool_obj.clone());
             }
             Err(_) => {
                 panic!();
@@ -144,7 +148,7 @@ mod tests {
     #[test]
     fn should_resolve_if_variable_is_in_enclosing_environment() {
         let mut enclosing = Environment::new(None);
-        let bool_obj = Object::Bool(true);
+        let bool_obj = Rc::new(RefCell::new(Object::Bool(true)));
         enclosing.values.insert(String::from("test_key"), bool_obj);
         let env = Environment::new(Some(Rc::new(RefCell::new(enclosing))));
         let token = Token {
@@ -154,6 +158,6 @@ mod tests {
             token_type: TokenType::Identifier,
         };
         let obj = env.get(token).expect("Cannot find variable");
-        assert_eq!(obj, Object::Bool(true));
+        assert_eq!(obj, bool_obj.clone());
     }
 }

@@ -45,7 +45,7 @@ pub trait Callable {
         &self,
         interpreter: &mut Interpreter,
         arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>
+    ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized;
 
@@ -116,14 +116,17 @@ impl Interpreter {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
         globals.borrow_mut().define(
             String::from("clock"),
-            Object::NativeFunction(NativeFunction::new(0, || {
-                let start = SystemTime::now();
-                let since_the_epoch = start
-                    .duration_since(UNIX_EPOCH)
-                    .expect("Time went backwards")
-                    .as_millis();
-                println!("{:?}", since_the_epoch);
-            })),
+            Rc::new(RefCell::new(Object::NativeFunction(NativeFunction::new(
+                0,
+                || {
+                    let start = SystemTime::now();
+                    let since_the_epoch = start
+                        .duration_since(UNIX_EPOCH)
+                        .expect("Time went backwards")
+                        .as_millis();
+                    println!("{:?}", since_the_epoch);
+                },
+            )))),
         );
         Interpreter {
             globals: Rc::clone(&globals),
@@ -157,7 +160,11 @@ impl Interpreter {
         // println!("resolve: {:?}", expr);
         self.locals.insert(expr.clone(), depth);
     }
-    fn look_up_variable(&mut self, name: &Token, expr: &Expr) -> Result<Object, RuntimeError> {
+    fn look_up_variable(
+        &mut self,
+        name: &Token,
+        expr: &Expr,
+    ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         // println!("look_up_variable {:?}", self.locals);
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
@@ -168,8 +175,8 @@ impl Interpreter {
     }
 }
 
-impl Visitor<Object, ()> for Interpreter {
-    fn visit_expr(&mut self, e: &Expr) -> Result<Object, RuntimeError> {
+impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
+    fn visit_expr(&mut self, e: &Expr) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
                 let object = self.visit_expr(value)?;
@@ -177,13 +184,16 @@ impl Visitor<Object, ()> for Interpreter {
                 let distance = self.locals.get(value);
                 match distance {
                     Some(d) => {
-                        self.environment
-                            .borrow_mut()
-                            .assign_at(*d, name.clone(), object.clone());
+                        self.environment.borrow_mut().assign_at(
+                            *d,
+                            name.clone(),
+                            Rc::clone(&object),
+                        );
                     }
                     None => {
-                        let v = object.clone();
-                        self.environment.borrow_mut().assign(name.clone(), v)?;
+                        self.environment
+                            .borrow_mut()
+                            .assign(name.clone(), Rc::clone(&object))?;
                     }
                 };
 
@@ -198,67 +208,89 @@ impl Visitor<Object, ()> for Interpreter {
                 let right_obj = self.visit_expr(right)?;
 
                 match operator.token_type {
-                    TokenType::BangEqual => Ok(Object::Bool(!is_equal(&left_obj, &right_obj))),
-                    TokenType::EqualEqual => Ok(Object::Bool(is_equal(&left_obj, &right_obj))),
-                    TokenType::Greater => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l > r)),
+                    TokenType::BangEqual => Ok(Rc::new(RefCell::new(Object::Bool(!is_equal(
+                        left_obj, right_obj,
+                    ))))),
+                    TokenType::EqualEqual => Ok(Rc::new(RefCell::new(Object::Bool(is_equal(
+                        left_obj, right_obj,
+                    ))))),
+                    TokenType::Greater => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Bool(l > r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
                             None,
                         )),
                     },
-                    TokenType::GreaterEqual => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l >= r)),
+                    TokenType::GreaterEqual => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Bool(l >= r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
                             None,
                         )),
                     },
-                    TokenType::Less => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l < r)),
+                    TokenType::Less => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Bool(l < r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
                             None,
                         )),
                     },
-                    TokenType::LessEqual => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Bool(l <= r)),
+                    TokenType::LessEqual => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Bool(l <= r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
                             None,
                         )),
                     },
-                    TokenType::Minus => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l - r)),
+                    TokenType::Minus => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Number(l - r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
                             None,
                         )),
                     },
-                    TokenType::Plus => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l + r)),
-                        (Object::String(l), Object::String(r)) => Ok(Object::String(l + &r)),
+                    TokenType::Plus => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Number(l + r))))
+                        }
+                        (Object::String(l), Object::String(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::String(l.to_owned() + r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be two numbers or two strings.",
                             None,
                         )),
                     },
-                    TokenType::Slash => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l / r)),
+                    TokenType::Slash => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Number(l / r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
                             None,
                         )),
                     },
-                    TokenType::Star => match (left_obj, right_obj) {
-                        (Object::Number(l), Object::Number(r)) => Ok(Object::Number(l * r)),
+                    TokenType::Star => match (&*left_obj.borrow(), &*right_obj.borrow()) {
+                        (Object::Number(l), Object::Number(r)) => {
+                            Ok(Rc::new(RefCell::new(Object::Number(l * r))))
+                        }
                         (_, _) => Err(RuntimeError::new(
                             operator.clone(),
                             "Operands must be numbers.",
@@ -512,8 +544,8 @@ fn is_truthy(obj: &Object) -> bool {
     }
 }
 
-fn is_equal(l_obj: &Object, r_obj: &Object) -> bool {
-    match (l_obj, r_obj) {
+fn is_equal(l_obj: Rc<RefCell<Object>>, r_obj: Rc<RefCell<Object>>) -> bool {
+    match (&*l_obj.borrow(), &*r_obj.borrow()) {
         (Object::Number(l), Object::Number(r)) => l == r,
         (Object::String(l), Object::String(r)) => l == r,
         (Object::Bool(l), Object::Bool(r)) => l == r,
