@@ -47,7 +47,7 @@ impl Callable for Function {
     fn call(
         &self,
         interpreter: &mut Interpreter,
-        arguments: Vec<Object>,
+        arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized,
@@ -68,18 +68,18 @@ impl Callable for Function {
                     .expect("Error mapping arguments to parameters");
                 environment
                     .borrow_mut()
-                    .define(p.lexeme.clone(), Rc::new(RefCell::new(*arg)))
+                    .define(p.lexeme.clone(), Rc::clone(arg))
             }
             let result = interpreter.interpret_block(&body, environment);
 
             if let Err(e) = result {
                 match e.value {
-                    Some(v) => return Ok(v),
+                    Some(v) => return Ok(Rc::new(RefCell::new(v))),
                     None => return Err(e),
                 }
             }
         }
-        Ok(Object::Nil)
+        Ok(Rc::new(RefCell::new(Object::Nil)))
     }
 
     fn arity(&self) -> usize {
@@ -118,13 +118,13 @@ impl Callable for NativeFunction {
     fn call(
         &self,
         _interpreter: &mut Interpreter,
-        _arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>
+        _arguments: Vec<Rc<RefCell<Object>>>,
+    ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized,
     {
         (self.native_function)();
 
-        Ok(Object::Nil)
+        Ok(Rc::new(RefCell::new(Object::Nil)))
     }
 }

@@ -44,7 +44,7 @@ pub trait Callable {
     fn call(
         &self,
         interpreter: &mut Interpreter,
-        arguments: Vec<Object>,
+        arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized;
@@ -309,14 +309,14 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 paren: p,
                 arguments: a,
             } => {
-                let callee = self.visit_expr(&c)?;
+                let callee = self.visit_expr(c)?;
 
                 let mut arguments = vec![];
                 for argument in a {
                     arguments.push(self.visit_expr(argument)?)
                 }
 
-                match callee {
+                let x = match &*callee.borrow() {
                     Object::Function(func) => {
                         if arguments.len() != func.arity() {
                             return Err(RuntimeError::new(
@@ -364,12 +364,13 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                         "Can only call functions and classes",
                         None,
                     )),
-                }
+                };
+                return x;
             }
             Expr::Get { object, name } => {
                 let object = self.visit_expr(&object)?;
-                if let Object::Instance(i) = object {
-                    return i.get(name);
+                if let Object::Instance(i) = &*object.borrow() {
+                    return Ok(i.get(name)?);
                 }
                 Err(RuntimeError::new(
                     name.clone(),
@@ -378,7 +379,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 ))
             }
             Expr::Grouping { expression } => self.visit_expr(expression),
-            Expr::Literal { value } => Ok(value.clone()),
+            Expr::Literal { value } => Ok(Rc::new(RefCell::new(value.clone()))),
             Expr::Logical {
                 left,
                 operator,
@@ -387,11 +388,11 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 let left = self.visit_expr(left)?;
 
                 if operator.token_type == TokenType::Or {
-                    if is_truthy(&left) {
+                    if is_truthy(&*left.borrow()) {
                         return Ok(left);
                     }
                 } else {
-                    if !is_truthy(&left) {
+                    if !is_truthy(&*left.borrow()) {
                         return Ok(left);
                     }
                 }
@@ -403,9 +404,9 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 value,
             } => {
                 let object = self.visit_expr(&object)?;
-                if let Object::Instance(mut i) = object {
+                if let Object::Instance(i) = &mut *object.borrow_mut() {
                     let value = self.visit_expr(value)?;
-                    i.set(name, value.clone());
+                    i.set(name, Rc::clone(&value));
                     return Ok(value);
                 }
                 Err(RuntimeError::new(
@@ -417,18 +418,20 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             Expr::This { keyword } => self.look_up_variable(keyword, e),
 
             Expr::Unary { operator, right } => {
-                let obj: Object = self.visit_expr(right)?;
+                let obj = self.visit_expr(right)?;
                 match operator.token_type {
-                    TokenType::Bang => Ok(Object::Bool(is_truthy(&obj))),
-                    TokenType::Minus => match obj {
-                        Object::Number(n) => Ok(Object::Number(-n)),
+                    TokenType::Bang => Ok(Rc::new(RefCell::new(Object::Bool(is_truthy(
+                        &*obj.borrow(),
+                    ))))),
+                    TokenType::Minus => match &*obj.borrow() {
+                        Object::Number(n) => Ok(Rc::new(RefCell::new(Object::Number(-n)))),
                         _ => Err(RuntimeError::new(
                             operator.clone(),
                             "Operand must be a number",
                             None,
                         )),
                     },
-                    _ => Ok(Object::Nil),
+                    _ => Ok(Rc::new(RefCell::new(Object::Nil))),
                 }
             }
             Expr::Variable { name } => self.look_up_variable(name, e),
@@ -444,7 +447,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 then_branch,
                 else_branch,
             } => {
-                if is_truthy(&self.visit_expr(condition)?) {
+                if is_truthy(&*self.visit_expr(condition)?.borrow()) {
                     self.visit_stmt(&then_branch)?;
                 } else {
                     match else_branch {
@@ -457,13 +460,17 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             }
             Stmt::Print(e) => {
                 let obj = self.visit_expr(e)?;
-                println!("{obj}");
+                println!("{}", obj.borrow());
             }
             Stmt::Return { keyword, value } => {
                 let ret = self.visit_expr(value);
                 match ret {
                     Ok(o) => {
-                        return Err(RuntimeError::new(keyword.clone(), "", Some(o)));
+                        return Err(RuntimeError::new(
+                            keyword.clone(),
+                            "",
+                            Some(o.borrow().clone()),
+                        ));
                     }
                     Err(e) if e.value.is_some() => {
                         return Err(e);
@@ -472,7 +479,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 }
             }
             Stmt::Var { name, initializer } => {
-                let mut value = Object::Nil;
+                let mut value = Rc::new(RefCell::new(Object::Nil));
                 match initializer {
                     Some(i) => {
                         value = self.visit_expr(i)?;
@@ -497,7 +504,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             } => {
                 self.environment
                     .borrow_mut()
-                    .define(name.lexeme.clone(), Object::Nil);
+                    .define(name.lexeme.clone(), Rc::new(RefCell::new(Object::Nil)));
                 let mut methods = HashMap::new();
                 for method in stmt_methods {
                     let function = Function::new(method.clone(), Rc::clone(&self.environment));
@@ -511,11 +518,14 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                     }
                 }
 
-                let klass = Object::Class(Class::new(name.lexeme.clone(), methods));
+                let klass = Rc::new(RefCell::new(Object::Class(Class::new(
+                    name.lexeme.clone(),
+                    methods,
+                ))));
                 self.environment.borrow_mut().assign(name.clone(), klass)?;
             }
             Stmt::While { condition, body } => {
-                while is_truthy(&self.visit_expr(condition)?) {
+                while is_truthy(&self.visit_expr(condition)?.borrow()) {
                     self.visit_stmt(body)?;
                 }
             }
@@ -525,9 +535,10 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 body: _,
             } => {
                 let function = Function::new(s.clone(), Rc::clone(&self.environment));
-                self.environment
-                    .borrow_mut()
-                    .define(name.lexeme.clone(), Object::Function(Box::new(function)));
+                self.environment.borrow_mut().define(
+                    name.lexeme.clone(),
+                    Rc::new(RefCell::new(Object::Function(Box::new(function)))),
+                );
             }
 
             _ => {}
@@ -574,7 +585,7 @@ mod tests {
             }),
         };
         match interpreter.visit_expr(&unary_expression) {
-            Ok(r) => assert_eq!(r, Object::Number(-1.0)),
+            Ok(r) => assert_eq!(*r.borrow(), Object::Number(-1.0)),
             Err(_) => panic!(),
         }
     }

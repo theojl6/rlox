@@ -1,5 +1,7 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
+use std::rc::Rc;
 
 use crate::error::RuntimeError;
 use crate::function::Function;
@@ -26,13 +28,13 @@ impl Callable for Class {
     fn call(
         &self,
         interpreter: &mut Interpreter,
-        arguments: Vec<Object>,
-    ) -> Result<Object, RuntimeError>
+        arguments: Vec<Rc<RefCell<Object>>>,
+    ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized,
     {
         let instance = Instance::new(self.clone());
-        Ok(Object::Instance(instance))
+        Ok(Rc::new(RefCell::new(Object::Instance(instance))))
     }
 
     fn arity(&self) -> usize {

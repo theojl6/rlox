@@ -17,7 +17,7 @@ impl Environment {
 
     pub fn get(&self, name: Token) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         match self.values.get(&name.lexeme) {
-            Some(o) => Ok(*o),
+            Some(o) => Ok(Rc::clone(o)),
             None => match &self.enclosing {
                 Some(e) => {
                     let enc = e.borrow_mut();
@@ -114,7 +114,8 @@ mod tests {
     fn get_should_return_reference_if_exists() {
         let mut env = Environment::new(None);
         let bool_obj = Rc::new(RefCell::new(Object::Bool(true)));
-        env.values.insert(String::from("test_key"), bool_obj);
+        env.values
+            .insert(String::from("test_key"), Rc::clone(&bool_obj));
         let token = Token {
             line: 0,
             lexeme: String::from("test_key"),
@@ -124,7 +125,7 @@ mod tests {
         let obj = env.get(token);
         match obj {
             Ok(o) => {
-                assert_eq!(o, bool_obj.clone());
+                assert_eq!(*o.borrow(), *bool_obj.borrow());
             }
             Err(_) => {
                 panic!();
@@ -149,7 +150,9 @@ mod tests {
     fn should_resolve_if_variable_is_in_enclosing_environment() {
         let mut enclosing = Environment::new(None);
         let bool_obj = Rc::new(RefCell::new(Object::Bool(true)));
-        enclosing.values.insert(String::from("test_key"), bool_obj);
+        enclosing
+            .values
+            .insert(String::from("test_key"), Rc::clone(&bool_obj));
         let env = Environment::new(Some(Rc::new(RefCell::new(enclosing))));
         let token = Token {
             line: 0,

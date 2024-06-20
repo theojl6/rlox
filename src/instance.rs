@@ -1,10 +1,10 @@
 use crate::{class::Class, error::RuntimeError, interpreter::Object, token::Token};
-use std::{borrow::BorrowMut, collections::HashMap, fmt};
+use std::{borrow::BorrowMut, cell::RefCell, collections::HashMap, fmt, rc::Rc};
 
 #[derive(Clone, Debug)]
 pub struct Instance {
     klass: Class,
-    fields: HashMap<String, Object>,
+    fields: HashMap<String, Rc<RefCell<Object>>>,
 }
 
 impl Instance {
@@ -15,15 +15,13 @@ impl Instance {
         }
     }
 
-    pub fn get(&self, name: &Token) -> Result<Object, RuntimeError> {
+    pub fn get(&self, name: &Token) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         if self.fields.contains_key(&name.lexeme) {
             return Ok(self.fields.get(&name.lexeme).unwrap().clone());
         }
         let method = self.klass.find_method(name.lexeme.clone());
         if let Some(mut m) = method {
-            return Ok(Object::Function(Box::new(
-                m.borrow_mut().bind(self.clone()),
-            )));
+            return Ok(Rc::new(RefCell::new(Object::Function(Box::new(m)))));
         }
         Err(RuntimeError::new(
             name.clone(),
@@ -32,7 +30,7 @@ impl Instance {
         ))
     }
 
-    pub fn set(&mut self, name: &Token, value: Object) {
+    pub fn set(&mut self, name: &Token, value: Rc<RefCell<Object>>) {
         self.fields.insert(name.lexeme.clone(), value);
     }
 }
