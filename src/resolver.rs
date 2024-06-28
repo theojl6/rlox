@@ -39,11 +39,9 @@ impl Resolver {
 
     fn declare(&mut self, name: &Token) -> Result<(), RuntimeError> {
         if self.scopes.is_empty() {
-            // println!("self.scopes.is_empty");
             return Ok(());
         }
-        let mut scope = self.scopes.pop().unwrap();
-        println!("declare popped scope{:?}", scope);
+        let scope = self.scopes.last_mut().unwrap();
         if scope.contains_key(&name.lexeme) {
             return Err(RuntimeError::new(
                 name.clone(),
@@ -52,9 +50,6 @@ impl Resolver {
             ));
         }
         scope.insert(name.lexeme.clone(), false);
-        println!("declare scope after insert: {:?}", scope);
-        self.scopes.push(scope);
-        println!("declare self.scopes: {:?}", self.scopes);
         Ok(())
     }
 
@@ -62,13 +57,11 @@ impl Resolver {
         if self.scopes.is_empty() {
             return;
         }
-        let mut scope = self.scopes.pop().unwrap();
+        let scope = self.scopes.last_mut().unwrap();
         scope.insert(name.lexeme.clone(), true);
-        self.scopes.push(scope);
     }
 
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
-        println!("resolve_local scopes: {:?}", self.scopes);
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);
@@ -82,11 +75,9 @@ impl Resolver {
         function_type: FunctionType,
     ) -> Result<(), RuntimeError> {
         if let Stmt::Function { name, params, body } = stmt {
-            println!("resolve_function stmt {:?}", stmt);
             let enclosing_function = self.current_function.clone();
             self.current_function = function_type;
             self.begin_scope();
-            println!("resolve_function params {:?}", params);
             for param in params {
                 self.declare(param)?;
                 self.define(param);
@@ -104,7 +95,7 @@ impl<'a> Visitor<(), ()> for Resolver {
         match e {
             Expr::Assign { name, value } => {
                 self.visit_expr(value)?;
-                self.resolve_local(value, name);
+                self.resolve_local(e, name);
                 Ok(())
             }
             Expr::Binary {
@@ -158,7 +149,6 @@ impl<'a> Visitor<(), ()> for Resolver {
             }
             Expr::Unary { operator: _, right } => self.visit_expr(right),
             Expr::Variable { name } => {
-                println!("resolver: visit variable stmt {:?}", name);
                 if !self.scopes.is_empty()
                     && self
                         .scopes
@@ -192,9 +182,8 @@ impl<'a> Visitor<(), ()> for Resolver {
                 self.define(name);
 
                 self.begin_scope();
-                let mut scope = self.scopes.pop().unwrap();
+                let scope = self.scopes.last_mut().unwrap();
                 scope.insert("this".into(), true);
-                self.scopes.push(scope);
                 println!("visit class stmt {:?}", self.scopes);
 
                 for method in methods {
@@ -248,6 +237,7 @@ impl<'a> Visitor<(), ()> for Resolver {
                 Ok(())
             }
             Stmt::While { condition, body } => {
+                println!("Stmt::While {:?}", condition);
                 self.visit_expr(condition)?;
                 self.visit_stmt(body)?;
                 Ok(())

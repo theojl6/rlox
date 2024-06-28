@@ -157,7 +157,6 @@ impl Interpreter {
         Ok(())
     }
     pub fn resolve(&mut self, expr: &Expr, depth: usize) {
-        // println!("resolve: {:?}", expr);
         self.locals.insert(expr.clone(), depth);
     }
     fn look_up_variable(
@@ -165,10 +164,11 @@ impl Interpreter {
         name: &Token,
         expr: &Expr,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
-        // println!("look_up_variable {:?}", self.locals);
+        println!("look_up_variable: {:?}", expr);
+        println!("self.local: {:?}", self.locals);
+
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
-            // println!("found variable at distance {}", d);
             return self.environment.borrow().get_at(*d, name.lexeme.clone());
         }
         self.globals.borrow().get(name.clone())
@@ -181,7 +181,9 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             Expr::Assign { name, value } => {
                 let object = self.visit_expr(value)?;
 
+                println!("Expr::Assign value {:?}", value);
                 let distance = self.locals.get(value);
+                println!("Expr::Assign distance {:?}", distance);
                 match distance {
                     Some(d) => {
                         self.environment.borrow_mut().assign_at(
@@ -466,11 +468,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                 let ret = self.visit_expr(value);
                 match ret {
                     Ok(o) => {
-                        return Err(RuntimeError::new(
-                            keyword.clone(),
-                            "",
-                            Some(o.borrow().clone()),
-                        ));
+                        return Err(RuntimeError::new(keyword.clone(), "", Some(Rc::clone(&o))));
                     }
                     Err(e) if e.value.is_some() => {
                         return Err(e);

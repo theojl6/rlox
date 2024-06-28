@@ -74,7 +74,7 @@ impl Callable for Function {
 
             if let Err(e) = result {
                 match e.value {
-                    Some(v) => return Ok(Rc::new(RefCell::new(v))),
+                    Some(v) => return Ok(v),
                     None => return Err(e),
                 }
             }

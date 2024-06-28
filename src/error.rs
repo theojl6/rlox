@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use crate::interpreter::Object;
 use crate::report;
 use crate::Token;
@@ -6,11 +9,11 @@ use crate::Token;
 pub struct RuntimeError {
     token: Token,
     message: String,
-    pub value: Option<Object>,
+    pub value: Option<Rc<RefCell<Object>>>,
 }
 
 impl RuntimeError {
-    pub fn new(token: Token, message: &str, value: Option<Object>) -> Self {
+    pub fn new(token: Token, message: &str, value: Option<Rc<RefCell<Object>>>) -> Self {
         if value.is_none() {
             report(token.line, &token.lexeme, &message);
         }

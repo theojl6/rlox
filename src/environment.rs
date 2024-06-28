@@ -4,14 +4,14 @@ use crate::{error::RuntimeError, interpreter::Object, token::Token};
 
 #[derive(Debug, Clone)]
 pub struct Environment {
-    pub enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Rc<RefCell<Object>>>,
+    pub enclosing: Option<Rc<RefCell<Environment>>>,
 }
 impl Environment {
     pub fn new(enclosing: Option<Rc<RefCell<Environment>>>) -> Self {
         Environment {
-            enclosing,
             values: HashMap::new(),
+            enclosing,
         }
     }
 
@@ -59,7 +59,7 @@ impl Environment {
         let enclosing = self.enclosing.to_owned().expect("no enclosing environment");
         let mut environment = enclosing;
         // println!("looking up ancestor at distance {}", distance);
-        for _ in 0..(distance - 1) {
+        for _ in 1..distance {
             let enclosing = environment
                 .borrow_mut()
                 .enclosing
@@ -76,20 +76,14 @@ impl Environment {
         distance: usize,
         name: String,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
-        // println!("get_at distance: {}", distance);
-        // println!("get_at name: {}", name);
         if distance == 0 {
-            println!("distance is 0, getting from self");
-            return Ok(self.values.get(&name).unwrap().clone());
+            return Ok(Rc::clone(self.values.get(&name).unwrap()));
         } else {
-            println!("distance is some, getting from ancestor");
-            println!("trying to get {} at distance {}", name, distance);
             let ancestor = self.ancestor(distance);
             let ancestor = ancestor.borrow_mut();
-            println!("ancestor at distance {}: {:?}", distance, ancestor);
             let object = ancestor.values.get(&name);
             if let Some(o) = object {
-                return Ok(o.clone());
+                return Ok(Rc::clone(o));
             } else {
                 println!("cannot get object");
             }
@@ -98,10 +92,15 @@ impl Environment {
     }
 
     pub fn assign_at(&mut self, distance: usize, name: Token, value: Rc<RefCell<Object>>) {
-        self.ancestor(distance)
-            .borrow_mut()
-            .values
-            .insert(name.lexeme, value);
+        println!("assign_at {}", distance);
+        if distance == 0 {
+            self.values.insert(name.lexeme, value);
+        } else {
+            self.ancestor(distance)
+                .borrow_mut()
+                .values
+                .insert(name.lexeme, value);
+        }
     }
 }
 
