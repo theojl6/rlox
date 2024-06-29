@@ -56,17 +56,11 @@ impl Environment {
     }
 
     fn ancestor(&self, distance: usize) -> Rc<RefCell<Environment>> {
-        let enclosing = self.enclosing.to_owned().expect("no enclosing environment");
+        let enclosing = Rc::clone(&self.enclosing.as_ref().unwrap());
         let mut environment = enclosing;
-        // println!("looking up ancestor at distance {}", distance);
         for _ in 1..distance {
-            let enclosing = environment
-                .borrow_mut()
-                .enclosing
-                .to_owned()
-                .expect("no enclosing environment");
+            let enclosing = Rc::clone(&environment.borrow().enclosing.as_ref().unwrap());
             environment = enclosing;
-            println!("hopped ancestor");
         }
         environment
     }
@@ -79,13 +73,18 @@ impl Environment {
         if distance == 0 {
             return Ok(Rc::clone(self.values.get(&name).unwrap()));
         } else {
+            println!("[ENVIRONMENT] current environment: {:?}", self);
             let ancestor = self.ancestor(distance);
             let ancestor = ancestor.borrow_mut();
+            println!(
+                "[ENVIRONMENT] got ancestor {:?} at distance {:?}",
+                ancestor, distance
+            );
             let object = ancestor.values.get(&name);
             if let Some(o) = object {
                 return Ok(Rc::clone(o));
             } else {
-                println!("cannot get object");
+                println!("[ENVIRONMENT] cannot get object");
             }
         }
         panic!()

@@ -164,16 +164,17 @@ impl Interpreter {
         name: &Token,
         expr: &Expr,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
-        println!("look_up_variable token: {:?}", name);
-        println!("look_up_variable expr: {:?}", expr);
-        println!("self.local: {:?}", self.locals);
+        println!("[INTERPRETER] look_up_variable token: {:?}", name);
+        println!("[INTERPRETER] look_up_variable expr: {:?}", expr);
+        println!("[INTERPRETER] self.locals: {:?}", self.locals);
 
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
-            println!("distance at {:?}", d);
+            println!("[INTERPRETER] distance at {:?}", d);
             return self.environment.borrow().get_at(*d, name.lexeme.clone());
+        } else {
+            self.globals.borrow().get(name.clone())
         }
-        self.globals.borrow().get(name.clone())
     }
 }
 
@@ -183,9 +184,10 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             Expr::Assign { name, value } => {
                 let object = self.visit_expr(value)?;
 
-                println!("Expr::Assign value {:?}", value);
-                let distance = self.locals.get(value);
-                println!("Expr::Assign distance {:?}", distance);
+                println!("[INTERPRETER] Expr::Assign value {:?}", value);
+                println!("[INTERPRETER] self.locals {:?}", self.locals);
+                let distance = self.locals.get(e);
+                println!("[INTERPRETER] Expr::Assign distance {:?}", distance);
                 match distance {
                     Some(d) => {
                         self.environment.borrow_mut().assign_at(
@@ -195,7 +197,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                         );
                     }
                     None => {
-                        self.environment
+                        self.globals
                             .borrow_mut()
                             .assign(name.clone(), Rc::clone(&object))?;
                     }

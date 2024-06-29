@@ -212,24 +212,17 @@ impl<'a> Parser<'a> {
             });
         }
 
-        match condition {
-            Some(c) => {
-                body = Stmt::While {
-                    condition: c,
-                    body: Box::new(body),
-                }
-            }
-            None => {}
-        }
+        body = Stmt::While {
+            condition: condition.unwrap(),
+            body: Box::new(body),
+        };
 
-        match initializer {
-            Some(i) => {
-                body = Stmt::Block {
-                    statements: vec![i, body],
-                }
+        if let Some(i) = initializer {
+            body = Stmt::Block {
+                statements: vec![i, body],
             }
-            None => {}
         }
+        println!("[PARSER] for body {:?}", body);
 
         Ok(body)
     }
