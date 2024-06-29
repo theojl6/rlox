@@ -54,10 +54,7 @@ impl Hash for Expr {
     fn hash<H: Hasher>(&self, state: &mut H) {
         match self {
             Expr::Assign { name, value } => {
-                name.lexeme.hash(state);
-                name.line.hash(state);
-                name.literal.hash(state);
-                name.token_type.hash(state);
+                name.hash(state);
                 value.hash(state);
             }
             Expr::Binary {
@@ -257,7 +254,10 @@ impl Visitor<String, String> for AstPrinter {
                 }
                 ast.push_str("}");
             }
-            Stmt::Class { name: _, methods: _ } => todo!(),
+            Stmt::Class {
+                name: _,
+                methods: _,
+            } => todo!(),
             Stmt::Expr(e) => {
                 let expr = self.visit_expr(e)?;
                 ast.push_str(&expr)

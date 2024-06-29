@@ -164,11 +164,13 @@ impl Interpreter {
         name: &Token,
         expr: &Expr,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
-        println!("look_up_variable: {:?}", expr);
+        println!("look_up_variable token: {:?}", name);
+        println!("look_up_variable expr: {:?}", expr);
         println!("self.local: {:?}", self.locals);
 
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
+            println!("distance at {:?}", d);
             return self.environment.borrow().get_at(*d, name.lexeme.clone());
         }
         self.globals.borrow().get(name.clone())

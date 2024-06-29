@@ -17,19 +17,24 @@ impl Resolver {
     pub fn new(interpreter: Interpreter) -> Resolver {
         Resolver {
             interpreter,
+            // this only tracks local block scopes, variables declared at the top level in the global scope
+            // are NOT tracked
             scopes: Vec::new(),
             current_function: FunctionType::None,
         }
     }
 
     pub fn resolve_stmts(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
+        println!("resolve_stmts");
         for statement in statements {
+            println!("statement {:?}", statement);
             self.visit_stmt(statement)?;
         }
         Ok(())
     }
 
     fn begin_scope(&mut self) {
+        println!("begin_scope");
         self.scopes.push(HashMap::new());
     }
 
@@ -62,8 +67,11 @@ impl Resolver {
     }
 
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
+        println!("resolve_local, self.scopes: {:?}", self.scopes);
+        println!("resolve_local, self.scopes.len(): {:?}", self.scopes.len());
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
+                println!("resolving at depth: {}", self.scopes.len() - 1 - i);
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);
                 return;
             }
@@ -74,7 +82,12 @@ impl Resolver {
         stmt: &Stmt,
         function_type: FunctionType,
     ) -> Result<(), RuntimeError> {
-        if let Stmt::Function { name: _, params, body } = stmt {
+        if let Stmt::Function {
+            name: _,
+            params,
+            body,
+        } = stmt
+        {
             let enclosing_function = self.current_function.clone();
             self.current_function = function_type;
             self.begin_scope();
@@ -172,6 +185,8 @@ impl<'a> Visitor<(), ()> for Resolver {
     fn visit_stmt(&mut self, s: &crate::stmt::Stmt) -> Result<(), RuntimeError> {
         match s {
             Stmt::Block { statements } => {
+                println!("Stmt::Block");
+                println!("{:?}", statements);
                 self.begin_scope();
                 self.resolve_stmts(statements)?;
                 self.end_scope();
@@ -184,7 +199,6 @@ impl<'a> Visitor<(), ()> for Resolver {
                 self.begin_scope();
                 let scope = self.scopes.last_mut().unwrap();
                 scope.insert("this".into(), true);
-                println!("visit class stmt {:?}", self.scopes);
 
                 for method in methods {
                     self.resolve_function(method, FunctionType::Method)?;
@@ -237,8 +251,9 @@ impl<'a> Visitor<(), ()> for Resolver {
                 Ok(())
             }
             Stmt::While { condition, body } => {
-                println!("Stmt::While {:?}", condition);
+                println!("Stmt::While condition: {:?}", condition);
                 self.visit_expr(condition)?;
+                println!("Stmt::While body: {:?}", body);
                 self.visit_stmt(body)?;
                 Ok(())
             }
