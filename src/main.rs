@@ -67,7 +67,7 @@ fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bo
     }
 }
 
-fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bool) {
+fn run(source: &str, had_error: &mut bool, _had_runtime_error: &mut bool, debug_mode: bool) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
@@ -80,13 +80,13 @@ fn run(source: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_m
                 ast_printer.print(stmts.clone());
             }
             let mut resolver = Resolver::new(interpreter);
-            if let Err(e) = resolver.resolve_stmts(&stmts) {
+            if let Err(_e) = resolver.resolve_stmts(&stmts) {
                 *had_error = true;
             }
             interpreter = resolver.interpreter;
             interpreter.interpret(&stmts);
         }
-        Err(e) => {
+        Err(_e) => {
             *had_error = true;
         }
     }
@@ -109,6 +109,6 @@ pub fn lox_error(token: &Token, message: &str) {
     }
 }
 
-pub fn lox_runtime_error(error: RuntimeError, had_runtime_error: &mut bool) {
+pub fn lox_runtime_error(_error: RuntimeError, had_runtime_error: &mut bool) {
     *had_runtime_error = true;
 }

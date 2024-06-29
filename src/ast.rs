@@ -202,8 +202,8 @@ impl Visitor<String, String> for AstPrinter {
                 Object::Bool(b) => {
                     ast.push_str(&b.to_string());
                 }
-                Object::Class(c) => ast.push_str(&"Class"),
-                Object::Instance(i) => ast.push_str(&"Instance"),
+                Object::Class(_c) => ast.push_str(&"Class"),
+                Object::Instance(_i) => ast.push_str(&"Instance"),
                 Object::Nil => {
                     ast.push_str(&"nil");
                 }
@@ -230,13 +230,13 @@ impl Visitor<String, String> for AstPrinter {
                 self.parenthesize(&mut ast, &operator.lexeme, vec![left_expr, right_expr]);
             }
             Expr::Set {
-                object,
-                name,
-                value,
+                object: _,
+                name: _,
+                value: _,
             } => {
                 todo!()
             }
-            Expr::This { keyword } => todo!(),
+            Expr::This { keyword: _ } => todo!(),
             Expr::Unary { operator, right } => {
                 let expr = self.visit_expr(right)?;
                 self.parenthesize(&mut ast, &operator.lexeme, vec![expr]);
@@ -257,7 +257,7 @@ impl Visitor<String, String> for AstPrinter {
                 }
                 ast.push_str("}");
             }
-            Stmt::Class { name, methods } => todo!(),
+            Stmt::Class { name: _, methods: _ } => todo!(),
             Stmt::Expr(e) => {
                 let expr = self.visit_expr(e)?;
                 ast.push_str(&expr)

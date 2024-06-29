@@ -27,8 +27,8 @@ impl Class {
 impl Callable for Class {
     fn call(
         &self,
-        interpreter: &mut Interpreter,
-        arguments: Vec<Rc<RefCell<Object>>>,
+        _interpreter: &mut Interpreter,
+        _arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized,

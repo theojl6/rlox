@@ -74,7 +74,7 @@ impl Resolver {
         stmt: &Stmt,
         function_type: FunctionType,
     ) -> Result<(), RuntimeError> {
-        if let Stmt::Function { name, params, body } = stmt {
+        if let Stmt::Function { name: _, params, body } = stmt {
             let enclosing_function = self.current_function.clone();
             self.current_function = function_type;
             self.begin_scope();
