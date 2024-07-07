@@ -1,4 +1,4 @@
-use crate::error;
+use crate::error::error;
 use crate::interpreter::Object;
 use crate::token::{Token, TokenType};
 

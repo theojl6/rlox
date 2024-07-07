@@ -1,7 +1,7 @@
 use crate::ast::Expr;
+use crate::error::lox_error;
 use crate::error::SyntaxError;
 use crate::interpreter::Object;
-use crate::lox_error;
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 pub struct Parser<'a> {
