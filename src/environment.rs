@@ -116,6 +116,7 @@ mod tests {
             .insert(String::from("test_key"), Rc::clone(&bool_obj));
         let token = Token {
             line: 0,
+            position: 0,
             lexeme: String::from("test_key"),
             literal: None,
             token_type: TokenType::Identifier,
@@ -136,6 +137,7 @@ mod tests {
         let env = Environment::new(None);
         let token = Token {
             line: 0,
+            position: 0,
             lexeme: String::from("test_key"),
             literal: None,
             token_type: TokenType::Identifier,
@@ -154,6 +156,7 @@ mod tests {
         let env = Environment::new(Some(Rc::new(RefCell::new(enclosing))));
         let token = Token {
             line: 0,
+            position: 0,
             lexeme: String::from("test_key"),
             literal: None,
             token_type: TokenType::Identifier,

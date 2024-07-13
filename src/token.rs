@@ -64,4 +64,7 @@ pub struct Token {
     pub lexeme: String,
     pub literal: Option<Object>,
     pub line: usize,
+    // because 2 same line variable expressions can get hashed into one, causing the 2 variable expression to have the same hashes so the scopes get incorrectly mapped. We need to include the position
+    // in order to differentiate same variable expressions (var x = 1; x < 10) correctly.
+    pub position: usize,
 }

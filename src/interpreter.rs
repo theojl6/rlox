@@ -581,6 +581,7 @@ mod tests {
                 lexeme: String::from("-"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Literal {
                 value: Object::Number(1.0),
@@ -601,6 +602,7 @@ mod tests {
                 lexeme: String::from("a"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             value: Box::new(Expr::Literal {
                 value: Object::Number(1.0),

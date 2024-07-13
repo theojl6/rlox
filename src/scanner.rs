@@ -8,6 +8,7 @@ pub struct Scanner {
     pub start: usize,
     pub current: usize,
     pub line: usize,
+    pub offset: usize,
 }
 
 impl Scanner {
@@ -18,6 +19,7 @@ impl Scanner {
             start: 0,
             current: 0,
             line: 1,
+            offset: 0,
         }
     }
     pub fn scan_tokens(&mut self) -> &Vec<Token> {
@@ -30,6 +32,7 @@ impl Scanner {
             lexeme: String::from(""),
             literal: None,
             line: self.line,
+            position: self.offset,
         });
         &self.tokens
     }
@@ -96,6 +99,7 @@ impl Scanner {
 
             '\n' => {
                 self.line += 1;
+                self.offset = 0;
             }
 
             '"' => {
@@ -116,6 +120,7 @@ impl Scanner {
     fn advance(&mut self) -> char {
         let c = self.source.chars().nth(self.current).unwrap();
         self.current = self.current + 1;
+        self.offset = self.offset + 1;
         c
     }
     fn add_token(&mut self, token_type: TokenType) {
@@ -125,6 +130,7 @@ impl Scanner {
             lexeme: String::from(text),
             literal: None,
             line: self.line,
+            position: self.offset,
         });
     }
 
@@ -135,6 +141,7 @@ impl Scanner {
             lexeme: String::from(text),
             literal,
             line: self.line,
+            position: self.offset,
         });
     }
     fn matches(&mut self, expected: &char) -> bool {

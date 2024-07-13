@@ -346,6 +346,7 @@ mod tests {
                 lexeme: String::from("-"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Literal {
                 value: Object::Number(0.0),
@@ -366,6 +367,7 @@ mod tests {
                 lexeme: String::from("-"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Literal {
                 value: Object::Number(0.0),
@@ -386,6 +388,7 @@ mod tests {
                 lexeme: String::from("+"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Literal {
                 value: Object::Number(1.0),
@@ -417,6 +420,7 @@ mod tests {
                 lexeme: String::from("x"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
         };
         assert_eq!(ast_printer.visit_expr(&variable_expr).expect(""), "x")
@@ -434,6 +438,7 @@ mod tests {
                 lexeme: String::from("+"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Literal {
                 value: Object::Number(1.0),
@@ -448,6 +453,7 @@ mod tests {
                 lexeme: String::from("-"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(binary_expr),
         };
@@ -472,6 +478,7 @@ mod tests {
                 lexeme: String::from("and"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Literal {
                 value: Object::Bool(true),
@@ -493,6 +500,7 @@ mod tests {
                 lexeme: String::from("x"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             value: Box::new(Expr::Literal { value: Object::Nil }),
         };
@@ -513,6 +521,7 @@ mod tests {
                     lexeme: String::from("hello"),
                     literal: None,
                     line: 0,
+                    position: 0,
                 },
             }),
             paren: Token {
@@ -520,6 +529,7 @@ mod tests {
                 lexeme: String::from(")"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             arguments: vec![
                 Box::new(Expr::Binary {
@@ -531,6 +541,7 @@ mod tests {
                         lexeme: String::from("+"),
                         literal: None,
                         line: 0,
+                        position: 0,
                     },
                     right: Box::new(Expr::Literal {
                         value: Object::Number(1.0),
@@ -545,6 +556,7 @@ mod tests {
                         lexeme: String::from("-"),
                         literal: None,
                         line: 0,
+                        position: 0,
                     },
                     right: Box::new(Expr::Literal {
                         value: Object::Number(1.0),
@@ -568,6 +580,7 @@ mod tests {
                     lexeme: String::from("-"),
                     literal: None,
                     line: 0,
+                    position: 0,
                 },
                 right: Box::new(Expr::Literal {
                     value: Object::Number(123.0),
@@ -578,6 +591,7 @@ mod tests {
                 lexeme: String::from("*"),
                 literal: None,
                 line: 0,
+                position: 0,
             },
             right: Box::new(Expr::Grouping {
                 expression: Box::new(Expr::Literal {
