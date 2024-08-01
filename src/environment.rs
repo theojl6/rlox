@@ -91,7 +91,6 @@ impl Environment {
     }
 
     pub fn assign_at(&mut self, distance: usize, name: Token, value: Rc<RefCell<Object>>) {
-        println!("assign_at {}", distance);
         if distance == 0 {
             self.values.insert(name.lexeme, value);
         } else {

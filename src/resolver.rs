@@ -25,7 +25,6 @@ impl Resolver {
     }
 
     pub fn resolve_stmts(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
-        println!("[RESOLVER] resolve_stmts");
         for statement in statements {
             println!("[RESOLVER] statement {:?}", statement);
             self.visit_stmt(statement)?;
