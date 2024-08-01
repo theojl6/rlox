@@ -164,13 +164,8 @@ impl Interpreter {
         name: &Token,
         expr: &Expr,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError> {
-        println!("[INTERPRETER] look_up_variable token: {:?}", name);
-        println!("[INTERPRETER] look_up_variable expr: {:?}", expr);
-        println!("[INTERPRETER] self.locals: {:?}", self.locals);
-
         let distance = self.locals.get(expr);
         if let Some(d) = distance {
-            println!("[INTERPRETER] distance at {:?}", d);
             return self.environment.borrow().get_at(*d, name.lexeme.clone());
         } else {
             self.globals.borrow().get(name.clone())
@@ -184,10 +179,7 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             Expr::Assign { name, value } => {
                 let object = self.visit_expr(value)?;
 
-                println!("[INTERPRETER] Expr::Assign value {:?}", value);
-                println!("[INTERPRETER] self.locals {:?}", self.locals);
                 let distance = self.locals.get(e);
-                println!("[INTERPRETER] Expr::Assign distance {:?}", distance);
                 match distance {
                     Some(d) => {
                         self.environment.borrow_mut().assign_at(
@@ -542,8 +534,6 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
                     Rc::new(RefCell::new(Object::Function(Box::new(function)))),
                 );
             }
-
-            _ => {}
         };
         Ok(())
     }

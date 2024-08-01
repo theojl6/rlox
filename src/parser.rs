@@ -222,7 +222,6 @@ impl<'a> Parser<'a> {
                 statements: vec![i, body],
             }
         }
-        println!("[PARSER] for body {:?}", body);
 
         Ok(body)
     }

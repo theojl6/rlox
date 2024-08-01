@@ -26,14 +26,12 @@ impl Resolver {
 
     pub fn resolve_stmts(&mut self, statements: &Vec<Stmt>) -> Result<(), RuntimeError> {
         for statement in statements {
-            println!("[RESOLVER] statement {:?}", statement);
             self.visit_stmt(statement)?;
         }
         Ok(())
     }
 
     fn begin_scope(&mut self) {
-        println!("[RESOLVER] begin_scope");
         self.scopes.push(HashMap::new());
     }
 
@@ -66,14 +64,8 @@ impl Resolver {
     }
 
     fn resolve_local(&mut self, expr: &Expr, name: &Token) {
-        println!("[RESOLVER] resolve_local, self.scopes: {:?}", self.scopes);
         for i in (0..self.scopes.len()).rev() {
             if self.scopes[i].contains_key(&name.lexeme) {
-                println!(
-                    "[RESOLVER] resolving expr {:?} depth: {}",
-                    expr,
-                    self.scopes.len() - 1 - i
-                );
                 self.interpreter.resolve(expr, self.scopes.len() - 1 - i);
                 return;
             }
@@ -187,8 +179,6 @@ impl<'a> Visitor<(), ()> for Resolver {
     fn visit_stmt(&mut self, s: &crate::stmt::Stmt) -> Result<(), RuntimeError> {
         match s {
             Stmt::Block { statements } => {
-                println!("[RESOLVER] Stmt::Block");
-                println!("[RESOLVER] {:?}", statements);
                 self.begin_scope();
                 self.resolve_stmts(statements)?;
                 self.end_scope();
@@ -253,9 +243,7 @@ impl<'a> Visitor<(), ()> for Resolver {
                 Ok(())
             }
             Stmt::While { condition, body } => {
-                println!("[RESOLVER] Stmt::While condition: {:?}", condition);
                 self.visit_expr(condition)?;
-                println!("[RESOLVER] Stmt::While body: {:?}", body);
                 self.visit_stmt(body)?;
                 Ok(())
             }

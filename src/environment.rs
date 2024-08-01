@@ -73,13 +73,8 @@ impl Environment {
         if distance == 0 {
             return Ok(Rc::clone(self.values.get(&name).unwrap()));
         } else {
-            println!("[ENVIRONMENT] current environment: {:?}", self);
             let ancestor = self.ancestor(distance);
             let ancestor = ancestor.borrow_mut();
-            println!(
-                "[ENVIRONMENT] got ancestor {:?} at distance {:?}",
-                ancestor, distance
-            );
             let object = ancestor.values.get(&name);
             if let Some(o) = object {
                 return Ok(Rc::clone(o));
