@@ -7,13 +7,13 @@ use crate::interpreter::Interpreter;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
-pub struct Resolver {
-    pub interpreter: Interpreter,
+pub struct Resolver<'a> {
+    pub interpreter: Interpreter<'a>,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
 }
 
-impl Resolver {
+impl Resolver<'_> {
     pub fn new(interpreter: Interpreter) -> Resolver {
         Resolver {
             interpreter,
@@ -97,7 +97,7 @@ impl Resolver {
     }
 }
 
-impl<'a> Visitor<(), ()> for Resolver {
+impl<'a> Visitor<(), ()> for Resolver<'_> {
     fn visit_expr(&mut self, e: &Expr) -> Result<(), RuntimeError> {
         match e {
             Expr::Assign { name, value } => {

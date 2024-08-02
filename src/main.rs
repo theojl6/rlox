@@ -3,6 +3,7 @@ use rlox::run_prompt;
 use std::env;
 
 fn main() {
+    let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
     let mut had_error = false;
     let mut had_runtime_error = false;
     let args: Vec<String> = env::args().collect();
@@ -10,8 +11,19 @@ fn main() {
     if args.len() > 2 {
         println!("Usage: rlox [script]");
     } else if args.len() == 2 {
-        run_file(&args[1], &mut had_error, &mut had_runtime_error, debug_mode);
+        run_file(
+            &args[1],
+            &mut writer,
+            &mut had_error,
+            &mut had_runtime_error,
+            debug_mode,
+        );
     } else {
-        run_prompt(&mut had_error, &mut had_runtime_error, debug_mode);
+        run_prompt(
+            &mut writer,
+            &mut had_error,
+            &mut had_runtime_error,
+            debug_mode,
+        );
     }
 }

@@ -106,15 +106,15 @@ impl PartialEq for Object {
 
 impl Eq for Object {}
 
-pub struct Interpreter {
+pub struct Interpreter<'a> {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
     locals: HashMap<Expr, usize>,
-    writer: Box<dyn Write>,
+    writer: &'a mut Box<dyn Write>,
 }
 
-impl Interpreter {
-    pub fn new() -> Self {
+impl<'a> Interpreter<'a> {
+    pub fn new(writer: &'a mut Box<dyn Write>) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
         globals.borrow_mut().define(
             String::from("clock"),
@@ -134,7 +134,7 @@ impl Interpreter {
             globals: Rc::clone(&globals),
             environment: Rc::clone(&globals),
             locals: HashMap::new(),
-            writer: Box::new(io::stdout()),
+            writer,
         }
     }
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> () {
@@ -176,7 +176,7 @@ impl Interpreter {
     }
 }
 
-impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
+impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
     fn visit_expr(&mut self, e: &Expr) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
@@ -461,7 +461,10 @@ impl Visitor<Rc<RefCell<Object>>, ()> for Interpreter {
             }
             Stmt::Print(e) => {
                 let obj = self.visit_expr(e)?;
-                println!("{}", obj.borrow());
+                let buffer = format!("{}\n", obj.borrow());
+                self.writer
+                    .write_all(buffer.as_bytes())
+                    .expect("Error writing to writer");
             }
             Stmt::Return { keyword, value } => {
                 let ret = self.visit_expr(value);
@@ -567,7 +570,8 @@ mod tests {
 
     #[test]
     fn unary() {
-        let mut interpreter = Interpreter::new();
+        let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
+        let mut interpreter = Interpreter::new(&mut writer);
         let unary_expression = Expr::Unary {
             operator: Token {
                 token_type: TokenType::Minus,
@@ -588,7 +592,8 @@ mod tests {
 
     #[test]
     fn assignment() {
-        let mut _interpreter = Interpreter::new();
+        let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
+        let mut _interpreter = Interpreter::new(&mut writer);
         let _assignment_expression = Expr::Assign {
             name: Token {
                 token_type: TokenType::Identifier,

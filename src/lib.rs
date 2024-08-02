@@ -25,9 +25,15 @@ pub mod scanner;
 pub mod stmt;
 pub mod token;
 
-pub fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bool) {
+pub fn run_file(
+    path: &str,
+    writer: &mut Box<dyn Write>,
+    had_error: &mut bool,
+    had_runtime_error: &mut bool,
+    debug_mode: bool,
+) {
     let contents = fs::read_to_string(path).expect("Should have been able to read the file");
-    run(&contents, had_error, had_runtime_error, debug_mode);
+    run(&contents, writer, had_error, had_runtime_error, debug_mode);
     if *had_error {
         process::exit(65);
     }
@@ -36,7 +42,12 @@ pub fn run_file(path: &str, had_error: &mut bool, had_runtime_error: &mut bool, 
     }
 }
 
-pub fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool, debug_mode: bool) {
+pub fn run_prompt(
+    writer: &mut Box<dyn Write>,
+    had_error: &mut bool,
+    had_runtime_error: &mut bool,
+    debug_mode: bool,
+) {
     loop {
         let mut prompt = String::new();
         println!("> ");
@@ -47,19 +58,32 @@ pub fn run_prompt(had_error: &mut bool, had_runtime_error: &mut bool, debug_mode
         if prompt == "exit" || prompt == "" {
             break;
         }
-        run(prompt.as_str(), had_error, had_runtime_error, debug_mode);
+        run(
+            prompt.as_str(),
+            writer,
+            had_error,
+            had_runtime_error,
+            debug_mode,
+        );
         *had_error = false;
     }
 }
 
-pub fn run(source: &str, had_error: &mut bool, _had_runtime_error: &mut bool, debug_mode: bool) {
+pub fn run(
+    source: &str,
+    writer: &mut Box<dyn Write>,
+    had_error: &mut bool,
+    _had_runtime_error: &mut bool,
+    debug_mode: bool,
+) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
     let stmts = parser.parse();
     match stmts {
         Ok(stmts) => {
-            let mut interpreter = Interpreter::new();
+            // let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
+            let mut interpreter = Interpreter::new(writer);
             if debug_mode {
                 let mut ast_printer = AstPrinter;
                 ast_printer.print(stmts.clone());
