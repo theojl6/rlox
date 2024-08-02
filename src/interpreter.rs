@@ -8,10 +8,11 @@ use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::fmt;
 use std::hash::{Hash, Hasher};
+use std::io::Write;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::{fmt, io};
 
 #[derive(Debug, Clone)]
 pub enum Object {
@@ -109,6 +110,7 @@ pub struct Interpreter {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
     locals: HashMap<Expr, usize>,
+    writer: Box<dyn Write>,
 }
 
 impl Interpreter {
@@ -132,6 +134,7 @@ impl Interpreter {
             globals: Rc::clone(&globals),
             environment: Rc::clone(&globals),
             locals: HashMap::new(),
+            writer: Box::new(io::stdout()),
         }
     }
     pub fn interpret(&mut self, stmts: &Vec<Stmt>) -> () {

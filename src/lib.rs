@@ -1,4 +1,8 @@
-use std::{fs, io, process};
+use std::{
+    fs,
+    io::{self, Write},
+    process,
+};
 
 use ast::AstPrinter;
 use error::RuntimeError;
