@@ -110,11 +110,11 @@ pub struct Interpreter<'a> {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
     locals: HashMap<Expr, usize>,
-    writer: &'a mut Box<dyn Write>,
+    writer: &'a mut (dyn Write + 'a),
 }
 
 impl<'a> Interpreter<'a> {
-    pub fn new(writer: &'a mut Box<dyn Write>) -> Self {
+    pub fn new(writer: &'a mut (dyn Write + 'a)) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
         globals.borrow_mut().define(
             String::from("clock"),

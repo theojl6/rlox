@@ -25,9 +25,9 @@ pub mod scanner;
 pub mod stmt;
 pub mod token;
 
-pub fn run_file(
+pub fn run_file<W: Write>(
     path: &str,
-    writer: &mut Box<dyn Write>,
+    writer: &mut W,
     had_error: &mut bool,
     had_runtime_error: &mut bool,
     debug_mode: bool,
@@ -69,9 +69,9 @@ pub fn run_prompt(
     }
 }
 
-pub fn run(
+pub fn run<W: Write>(
     source: &str,
-    writer: &mut Box<dyn Write>,
+    writer: &mut W,
     had_error: &mut bool,
     _had_runtime_error: &mut bool,
     debug_mode: bool,
