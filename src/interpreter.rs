@@ -8,11 +8,11 @@ use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
 use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::io::Write;
 use std::rc::Rc;
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::{fmt, io};
 
 #[derive(Debug, Clone)]
 pub enum Object {
