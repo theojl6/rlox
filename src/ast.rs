@@ -211,7 +211,8 @@ impl Visitor<String, String> for AstPrinter {
                     } else {
                         String::from("<unnamed>")
                     };
-                    ast.push_str(&("<fun>".to_owned() + &name));
+
+                    ast.push_str(&(format!("<fun>{}", &name)));
                 }
                 Object::NativeFunction(..) => {
                     ast.push_str(&"<native fun>");
@@ -250,7 +251,7 @@ impl Visitor<String, String> for AstPrinter {
                 ast.push_str("{\n");
                 for s in statements {
                     let stmt = self.visit_stmt(s)?;
-                    ast.push_str(&("  ".to_owned() + &stmt + ";\n"));
+                    ast.push_str(&format!("  {};\n", &stmt));
                 }
                 ast.push_str("}");
             }
@@ -264,7 +265,7 @@ impl Visitor<String, String> for AstPrinter {
             }
             Stmt::Function { name, params, body } => {
                 let mut function = String::new();
-                function.push_str(&("fun ".to_owned() + &name.lexeme + "("));
+                function.push_str(&format!("fun {}(", &name.lexeme));
 
                 let params = params
                     .iter()
@@ -281,9 +282,10 @@ impl Visitor<String, String> for AstPrinter {
                 let body: String = body
                     .iter()
                     .map(|b| {
-                        "    ".to_owned()
-                            + &self.visit_stmt(b).expect("error printing function body")
-                            + ";\n"
+                        format!(
+                            "    {};\n",
+                            &self.visit_stmt(b).expect("error printing function body")
+                        )
                     })
                     .collect();
 
@@ -305,7 +307,7 @@ impl Visitor<String, String> for AstPrinter {
 
                 if let Some(b) = else_branch {
                     let else_b = self.visit_stmt(&b)?;
-                    ast.push_str(&(" else { ".to_owned() + &else_b + " }"));
+                    ast.push_str(&format!(" else {{ {} }}", &else_b));
                 }
             }
             Stmt::Print(e) => {
@@ -313,7 +315,7 @@ impl Visitor<String, String> for AstPrinter {
                 ast.push_str(&format!("print {expr};"));
             }
             Stmt::Return { keyword, value } => {
-                ast.push_str(&(keyword.lexeme.clone() + " " + &self.visit_expr(value)?));
+                ast.push_str(&format!("{} {}", keyword.lexeme, &self.visit_expr(value)?));
             }
             Stmt::Var { name, initializer } => {
                 ast.push_str(&name.lexeme.clone());

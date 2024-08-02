@@ -25,7 +25,7 @@ impl Environment {
                 }
                 None => Err(RuntimeError::new(
                     name.clone(),
-                    &("Get: Undefined variable '".to_owned() + &name.lexeme + "'."),
+                    &format!("Get: Undefined variable '{}'.", &name.lexeme),
                     None,
                 )),
             },

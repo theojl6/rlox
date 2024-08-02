@@ -54,7 +54,7 @@ pub fn lox_error(token: &Token, message: &str) {
     if token.token_type == TokenType::Eof {
         report(token.line, " at end", message);
     } else {
-        let at = " at ".to_owned() + &token.lexeme + "'";
+        let at = format!(" at {}'", &token.lexeme);
         report(token.line, &at, message);
     }
 }
