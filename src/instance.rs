@@ -21,7 +21,9 @@ impl Instance {
         }
         let method = self.klass.find_method(name.lexeme.clone());
         if let Some(m) = method {
-            return Ok(Rc::new(RefCell::new(Object::Function(Box::new(m)))));
+            return Ok(Rc::new(RefCell::new(Object::Function(Box::new(
+                m.bind(self.clone()),
+            )))));
         }
         Err(RuntimeError::new(
             name.clone(),
