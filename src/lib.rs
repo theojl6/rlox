@@ -101,10 +101,6 @@ pub fn run<W: Write>(
     }
 }
 
-fn error(line: usize, message: &str) {
-    report(line, &"", message);
-}
-
 pub fn report(line: usize, at: &str, message: &str) {
     println!("[line {line}] Error {at}: {message}");
 }
