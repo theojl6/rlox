@@ -11,6 +11,7 @@ pub struct Resolver<'a> {
     pub interpreter: Interpreter<'a>,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
+    current_class: ClassType,
 }
 
 impl Resolver<'_> {
@@ -21,6 +22,7 @@ impl Resolver<'_> {
             // are NOT tracked
             scopes: Vec::new(),
             current_function: FunctionType::None,
+            current_class: ClassType::None,
         }
     }
 
@@ -151,6 +153,13 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 Ok(())
             }
             Expr::This { keyword } => {
+                if self.current_class == ClassType::None {
+                    return Err(RuntimeError::new(
+                        keyword.clone(),
+                        "Can't use 'this' keyword outside of a class.",
+                        None,
+                    ));
+                }
                 self.resolve_local(e, keyword);
                 Ok(())
             }
@@ -185,6 +194,8 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 Ok(())
             }
             Stmt::Class { name, methods } => {
+                let enclosing_class = self.current_class.clone();
+                self.current_class = ClassType::Class;
                 self.declare(name)?;
                 self.define(name);
 
@@ -197,6 +208,7 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 }
 
                 self.end_scope();
+                self.current_class = enclosing_class;
                 Ok(())
             }
             Stmt::Expr(e) => self.visit_expr(e),
@@ -256,4 +268,10 @@ enum FunctionType {
     None,
     Function,
     Method,
+}
+
+#[derive(Clone, PartialEq)]
+enum ClassType {
+    None,
+    Class,
 }
