@@ -153,11 +153,22 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 self.visit_expr(object)?;
                 Ok(())
             }
-            Expr::Super { keyword, method } => {
-                self.resolve_local(e, keyword);
-
-                Ok(())
-            }
+            Expr::Super { keyword, method } => match self.current_class {
+                ClassType::None => Err(RuntimeError::new(
+                    keyword.clone(),
+                    "Can't use 'super' outside of a class.",
+                    None,
+                )),
+                ClassType::Subclass => {
+                    self.resolve_local(e, keyword);
+                    Ok(())
+                }
+                _ => Err(RuntimeError::new(
+                    keyword.clone(),
+                    "Can't use 'super' in a class with no superclass.",
+                    None,
+                )),
+            },
             Expr::This { keyword } => {
                 if self.current_class == ClassType::None {
                     return Err(RuntimeError::new(
@@ -225,6 +236,7 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 }
 
                 if let Some(sc) = superclass {
+                    self.current_class = ClassType::Subclass;
                     self.visit_expr(sc)?;
                 }
 
@@ -335,4 +347,5 @@ enum FunctionType {
 enum ClassType {
     None,
     Class,
+    Subclass,
 }
