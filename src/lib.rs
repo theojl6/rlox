@@ -42,8 +42,8 @@ pub fn run_file<W: Write>(
     }
 }
 
-pub fn run_prompt(
-    writer: &mut Box<dyn Write>,
+pub fn run_prompt<W: Write>(
+    writer: &mut W,
     had_error: &mut bool,
     had_runtime_error: &mut bool,
     debug_mode: bool,

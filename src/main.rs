@@ -3,7 +3,7 @@ use rlox::run_prompt;
 use std::env;
 
 fn main() {
-    let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
+    let mut writer = std::io::stdout();
     let mut had_error = false;
     let mut had_runtime_error = false;
     let args: Vec<String> = env::args().collect();
