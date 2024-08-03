@@ -12,14 +12,14 @@ use crate::interpreter::{Callable, Interpreter, Object};
 #[derive(Clone, Debug)]
 pub struct Class {
     pub name: String,
-    superclass: Option<Rc<Class>>,
+    superclass: Option<Rc<RefCell<Object>>>,
     methods: HashMap<String, Function>,
 }
 
 impl Class {
     pub fn new(
         name: String,
-        superclass: Option<Rc<Class>>,
+        superclass: Option<Rc<RefCell<Object>>>,
         methods: HashMap<String, Function>,
     ) -> Self {
         Class {
@@ -30,8 +30,10 @@ impl Class {
     }
 
     pub fn find_method(&self, name: String) -> Option<Function> {
-        if let Some(sc) = self.superclass.borrow() {
-            return sc.find_method(name);
+        if let Some(sc) = &self.superclass {
+            if let Object::Class(c) = &*sc.borrow_mut() {
+                return c.find_method(name);
+            }
         }
         return self.methods.get(&name).cloned();
     }

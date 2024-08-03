@@ -153,6 +153,11 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 self.visit_expr(object)?;
                 Ok(())
             }
+            Expr::Super { keyword, method } => {
+                self.resolve_local(e, keyword);
+
+                Ok(())
+            }
             Expr::This { keyword } => {
                 if self.current_class == ClassType::None {
                     return Err(RuntimeError::new(
@@ -223,6 +228,11 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                     self.visit_expr(sc)?;
                 }
 
+                if superclass.is_some() {
+                    self.begin_scope();
+                    self.scopes.last_mut().unwrap().insert("super".into(), true);
+                }
+
                 self.begin_scope();
                 let scope = self.scopes.last_mut().unwrap();
                 scope.insert("this".into(), true);
@@ -238,6 +248,10 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 }
 
                 self.end_scope();
+                if superclass.is_some() {
+                    self.end_scope();
+                }
+
                 self.current_class = enclosing_class;
                 Ok(())
             }

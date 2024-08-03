@@ -416,6 +416,38 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     None,
                 ))
             }
+            Expr::Super { keyword, method } => {
+                let distance = *self.locals.get(e).unwrap();
+                let superclass = self.environment.borrow().get_at(distance, "super".into())?;
+                let superclass = superclass.borrow();
+                let object = self
+                    .environment
+                    .borrow()
+                    .get_at(distance - 1, "this".into())?;
+                if let Object::Class(class) = &*superclass {
+                    let m = class.find_method(method.lexeme.clone());
+                    match m {
+                        Some(m) => {
+                            if let Object::Instance(instance) = &*object.borrow() {
+                                Ok(Rc::new(RefCell::new(Object::Function(Box::new(
+                                    m.bind(instance.clone()),
+                                )))))
+                            } else {
+                                panic!()
+                            }
+                        }
+                        None => {
+                            return Err(RuntimeError::new(
+                                method.clone(),
+                                &format!("Undefined property '{}'", method.lexeme.clone()),
+                                None,
+                            ))
+                        }
+                    }
+                } else {
+                    panic!()
+                }
+            }
             Expr::This { keyword } => self.look_up_variable(keyword, e),
 
             Expr::Unary { operator, right } => {
@@ -512,7 +544,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     {
                         match &*superclass_expr.borrow() {
                             Object::Class(c) => {
-                                superclass = Some(Rc::new(c.clone()));
+                                superclass = Some(Rc::new(RefCell::new(Object::Class(c.clone()))));
                             }
                             _ => {
                                 return Err(RuntimeError::new(
@@ -527,6 +559,16 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                 self.environment
                     .borrow_mut()
                     .define(name.lexeme.clone(), Rc::new(RefCell::new(Object::Nil)));
+
+                if stmt_superclass.is_some() && superclass.is_some() {
+                    self.environment = Rc::new(RefCell::new(Environment::new(Some(Rc::clone(
+                        &self.environment,
+                    )))));
+                    self.environment
+                        .borrow_mut()
+                        .define("super".into(), superclass.clone().unwrap());
+                }
+
                 let mut methods = HashMap::new();
                 for method in stmt_methods {
                     if let Stmt::Function {
@@ -546,9 +588,13 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
 
                 let klass = Rc::new(RefCell::new(Object::Class(Class::new(
                     name.lexeme.clone(),
-                    superclass,
+                    superclass.clone(),
                     methods,
                 ))));
+                if superclass.is_some() {
+                    let enclosing = self.environment.borrow().enclosing.to_owned().unwrap();
+                    self.environment = enclosing;
+                }
                 self.environment.borrow_mut().assign(name.clone(), klass)?;
             }
             Stmt::While { condition, body } => {
