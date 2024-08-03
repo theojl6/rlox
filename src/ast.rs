@@ -38,6 +38,10 @@ pub enum Expr {
         name: Token,
         value: Box<Expr>,
     },
+    Super {
+        keyword: Token,
+        method: Token,
+    },
     This {
         keyword: Token,
     },
@@ -102,6 +106,10 @@ impl Hash for Expr {
                 object.hash(state);
                 name.hash(state);
                 value.hash(state);
+            }
+            Expr::Super { keyword, method } => {
+                keyword.hash(state);
+                method.hash(state);
             }
             Expr::This { keyword } => keyword.hash(state),
             Expr::Unary { operator, right } => {
@@ -231,6 +239,12 @@ impl Visitor<String, String> for AstPrinter {
                 object: _,
                 name: _,
                 value: _,
+            } => {
+                todo!()
+            }
+            Expr::Super {
+                keyword: _,
+                method: _,
             } => {
                 todo!()
             }

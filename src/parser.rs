@@ -538,6 +538,12 @@ impl<'a> Parser<'a> {
                 value: self.previous().literal.expect("No literal found in token"),
             });
         }
+        if self.matches(&vec![TokenType::Super]) {
+            let keyword = self.previous();
+            self.consume(&TokenType::Dot, "Expect '.' after 'super'.")?;
+            let method = self.consume(&TokenType::Identifier, "Expect superclass method name.")?;
+            return Ok(Expr::Super { keyword, method });
+        }
         if self.matches(&vec![TokenType::This]) {
             return Ok(Expr::This {
                 keyword: self.previous(),
