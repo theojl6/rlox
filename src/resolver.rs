@@ -194,11 +194,34 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 self.end_scope();
                 Ok(())
             }
-            Stmt::Class { name, methods } => {
+            Stmt::Class {
+                name,
+                methods,
+                superclass,
+            } => {
                 let enclosing_class = self.current_class.clone();
                 self.current_class = ClassType::Class;
                 self.declare(name)?;
                 self.define(name);
+
+                if let Some(sc) = superclass {
+                    if let Expr::Variable {
+                        name: variable_name,
+                    } = sc
+                    {
+                        if name.lexeme == variable_name.lexeme {
+                            return Err(RuntimeError::new(
+                                variable_name.clone(),
+                                "A class can't inherit from itself",
+                                None,
+                            ));
+                        }
+                    }
+                }
+
+                if let Some(sc) = superclass {
+                    self.visit_expr(sc)?;
+                }
 
                 self.begin_scope();
                 let scope = self.scopes.last_mut().unwrap();

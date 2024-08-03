@@ -501,7 +501,29 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
             Stmt::Class {
                 name,
                 methods: stmt_methods,
+                superclass: stmt_superclass,
             } => {
+                let mut superclass = None;
+                if let Some(sc) = stmt_superclass {
+                    let superclass_expr = self.visit_expr(sc)?;
+                    if let Expr::Variable {
+                        name: variable_name,
+                    } = sc
+                    {
+                        match &*superclass_expr.borrow() {
+                            Object::Class(c) => {
+                                superclass = Some(Rc::new(c.clone()));
+                            }
+                            _ => {
+                                return Err(RuntimeError::new(
+                                    variable_name.clone(),
+                                    "Superclass must be a class.",
+                                    None,
+                                ));
+                            }
+                        }
+                    }
+                }
                 self.environment
                     .borrow_mut()
                     .define(name.lexeme.clone(), Rc::new(RefCell::new(Object::Nil)));
@@ -524,6 +546,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
 
                 let klass = Rc::new(RefCell::new(Object::Class(Class::new(
                     name.lexeme.clone(),
+                    superclass,
                     methods,
                 ))));
                 self.environment.borrow_mut().assign(name.clone(), klass)?;

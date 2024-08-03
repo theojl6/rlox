@@ -258,6 +258,7 @@ impl Visitor<String, String> for AstPrinter {
             Stmt::Class {
                 name: _,
                 methods: _,
+                superclass: _,
             } => todo!(),
             Stmt::Expr(e) => {
                 let expr = self.visit_expr(e)?;

@@ -144,7 +144,18 @@ impl<'a> Parser<'a> {
             methods.push(self.function("method")?);
         }
         self.consume(&TokenType::RightBrace, "Expect '}' after class body.")?;
-        Ok(Stmt::Class { name, methods })
+        let mut superclass = None;
+        if self.matches(&vec![TokenType::Less]) {
+            self.consume(&TokenType::Identifier, "Expect superclass name.")?;
+            superclass = Some(Expr::Variable {
+                name: self.previous(),
+            });
+        }
+        Ok(Stmt::Class {
+            name,
+            methods,
+            superclass,
+        })
     }
 
     fn statement(&mut self) -> Result<Stmt, SyntaxError> {

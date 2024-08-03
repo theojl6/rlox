@@ -11,12 +11,21 @@ use crate::interpreter::{Callable, Interpreter, Object};
 #[derive(Clone, Debug)]
 pub struct Class {
     pub name: String,
+    superclass: Option<Rc<Class>>,
     methods: HashMap<String, Function>,
 }
 
 impl Class {
-    pub fn new(name: String, methods: HashMap<String, Function>) -> Self {
-        Class { name, methods }
+    pub fn new(
+        name: String,
+        superclass: Option<Rc<Class>>,
+        methods: HashMap<String, Function>,
+    ) -> Self {
+        Class {
+            name,
+            superclass,
+            methods,
+        }
     }
 
     pub fn find_method(&self, name: String) -> Option<Function> {
