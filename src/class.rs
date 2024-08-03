@@ -30,12 +30,17 @@ impl Class {
     }
 
     pub fn find_method(&self, name: String) -> Option<Function> {
+        if self.methods.contains_key(&name) {
+            return self.methods.get(&name).cloned();
+        }
+
         if let Some(sc) = &self.superclass {
             if let Object::Class(c) = &*sc.borrow_mut() {
                 return c.find_method(name);
             }
         }
-        return self.methods.get(&name).cloned();
+
+        return None;
     }
 }
 
