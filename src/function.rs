@@ -80,7 +80,13 @@ impl Callable for Function {
 
             if let Err(e) = result {
                 match e.value {
-                    Some(v) => return Ok(v),
+                    Some(v) => {
+                        if self.is_initializer {
+                            return self.closure.borrow().get_at(0, String::from("this"));
+                        }
+
+                        return Ok(v);
+                    }
                     None => return Err(e),
                 }
             }

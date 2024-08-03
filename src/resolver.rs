@@ -4,6 +4,7 @@ use crate::ast::Expr;
 use crate::ast::Visitor;
 use crate::error::RuntimeError;
 use crate::interpreter::Interpreter;
+use crate::interpreter::Object;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
@@ -204,7 +205,13 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                 scope.insert("this".into(), true);
 
                 for method in methods {
-                    self.resolve_function(method, FunctionType::Method)?;
+                    let mut declaration = FunctionType::Method;
+                    if let Stmt::Function { name, .. } = method {
+                        if name.lexeme == "init" {
+                            declaration = FunctionType::Initializer;
+                        }
+                    }
+                    self.resolve_function(method, declaration)?;
                 }
 
                 self.end_scope();
@@ -243,7 +250,23 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
                         None,
                     ));
                 }
-                self.visit_expr(value)?;
+                if let Expr::Literal {
+                    value: literal_value,
+                } = value
+                {
+                    if *literal_value != Object::Nil {
+                        if self.current_function == FunctionType::Initializer {
+                            return Err(RuntimeError::new(
+                                keyword.clone(),
+                                "Can't return a value from an initializer.",
+                                None,
+                            ));
+                        }
+                        self.visit_expr(value)?;
+                    }
+                } else {
+                    self.visit_expr(value)?;
+                }
                 Ok(())
             }
             Stmt::Var { name, initializer } => {
@@ -267,6 +290,7 @@ impl<'a> Visitor<(), ()> for Resolver<'_> {
 enum FunctionType {
     None,
     Function,
+    Initializer,
     Method,
 }
 
