@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
@@ -29,6 +30,9 @@ impl Class {
     }
 
     pub fn find_method(&self, name: String) -> Option<Function> {
+        if let Some(sc) = self.superclass.borrow() {
+            return sc.find_method(name);
+        }
         return self.methods.get(&name).cloned();
     }
 }
