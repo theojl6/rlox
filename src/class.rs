@@ -27,18 +27,26 @@ impl Class {
 impl Callable for Class {
     fn call(
         &self,
-        _interpreter: &mut Interpreter,
-        _arguments: Vec<Rc<RefCell<Object>>>,
+        interpreter: &mut Interpreter,
+        arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
         Self: Sized,
     {
         let instance = Instance::new(self.clone());
+        if let Some(initializer) = self.find_method(String::from("init")) {
+            initializer
+                .bind(instance.clone())
+                .call(interpreter, arguments)?;
+        }
         Ok(Rc::new(RefCell::new(Object::Instance(instance))))
     }
 
     fn arity(&self) -> usize {
-        0
+        match self.find_method(String::from("init")) {
+            Some(initializer) => initializer.arity(),
+            None => 0,
+        }
     }
 }
 

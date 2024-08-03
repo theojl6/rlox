@@ -507,13 +507,17 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     .define(name.lexeme.clone(), Rc::new(RefCell::new(Object::Nil)));
                 let mut methods = HashMap::new();
                 for method in stmt_methods {
-                    let function = Function::new(method.clone(), Rc::clone(&self.environment));
                     if let Stmt::Function {
                         name,
                         params: _,
                         body: _,
                     } = method
                     {
+                        let function = Function::new(
+                            method.clone(),
+                            Rc::clone(&self.environment),
+                            name.lexeme == "init",
+                        );
                         methods.insert(name.lexeme.clone(), function);
                     }
                 }
@@ -534,7 +538,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                 params: _,
                 body: _,
             } => {
-                let function = Function::new(s.clone(), Rc::clone(&self.environment));
+                let function = Function::new(s.clone(), Rc::clone(&self.environment), false);
                 self.environment.borrow_mut().define(
                     name.lexeme.clone(),
                     Rc::new(RefCell::new(Object::Function(Box::new(function)))),

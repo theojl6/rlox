@@ -4,6 +4,10 @@ use std::rc::Rc;
 use crate::interpreter::Object;
 use crate::token::{Token, TokenType};
 
+pub trait LoxError {
+    fn report(&self);
+}
+
 #[derive(Debug)]
 pub struct RuntimeError {
     token: Token,
@@ -13,14 +17,21 @@ pub struct RuntimeError {
 
 impl RuntimeError {
     pub fn new(token: Token, message: &str, value: Option<Rc<RefCell<Object>>>) -> Self {
-        if value.is_none() {
-            report(token.line, &token.lexeme, &message);
-        }
-
         Self {
             token,
             message: message.into(),
             value,
+        }
+    }
+}
+
+impl LoxError for RuntimeError {
+    fn report(&self) {
+        if self.value.is_none() {
+            println!(
+                "[line {}] Error {}: {}",
+                self.token.line, self.token.lexeme, self.message
+            );
         }
     }
 }
@@ -52,13 +63,9 @@ pub fn report(line: usize, at: &str, message: &str) {
 
 pub fn lox_error(token: &Token, message: &str) {
     if token.token_type == TokenType::Eof {
-        report(token.line, " at end", message);
+        report(token.line, "at end", message);
     } else {
         let at = format!(" at {}'", &token.lexeme);
         report(token.line, &at, message);
     }
-}
-
-pub fn lox_runtime_error(_error: RuntimeError, had_runtime_error: &mut bool) {
-    *had_runtime_error = true;
 }

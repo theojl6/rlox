@@ -5,7 +5,7 @@ use std::{
 };
 
 use ast::AstPrinter;
-use error::RuntimeError;
+use error::{LoxError, RuntimeError};
 use interpreter::Interpreter;
 use parser::Parser;
 use resolver::Resolver;
@@ -82,14 +82,14 @@ pub fn run<W: Write>(
     let stmts = parser.parse();
     match stmts {
         Ok(stmts) => {
-            // let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
             let mut interpreter = Interpreter::new(writer);
             if debug_mode {
                 let mut ast_printer = AstPrinter;
                 ast_printer.print(stmts.clone());
             }
             let mut resolver = Resolver::new(interpreter);
-            if let Err(_e) = resolver.resolve_stmts(&stmts) {
+            if let Err(e) = resolver.resolve_stmts(&stmts) {
+                e.report();
                 *had_error = true;
             }
             interpreter = resolver.interpreter;
@@ -112,8 +112,4 @@ pub fn lox_error(token: &Token, message: &str) {
         let at = " at ".to_owned() + &token.lexeme + "'";
         report(token.line, &at, message);
     }
-}
-
-pub fn lox_runtime_error(_error: RuntimeError, had_runtime_error: &mut bool) {
-    *had_runtime_error = true;
 }
