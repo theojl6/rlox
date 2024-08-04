@@ -1,6 +1,7 @@
 use std::{
     fs,
     io::{self, Write},
+    net::TcpListener,
     process,
 };
 
@@ -10,6 +11,7 @@ use interpreter::Interpreter;
 use parser::Parser;
 use resolver::Resolver;
 use scanner::Scanner;
+use server::handle_connection;
 use token::{Token, TokenType};
 
 pub mod ast;
@@ -22,6 +24,7 @@ pub mod interpreter;
 pub mod parser;
 pub mod resolver;
 pub mod scanner;
+pub mod server;
 pub mod stmt;
 pub mod token;
 
@@ -66,6 +69,16 @@ pub fn run_prompt<W: Write>(
             debug_mode,
         );
         *had_error = false;
+    }
+}
+
+pub fn run_server() {
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+
+    for stream in listener.incoming() {
+        let stream = stream.unwrap();
+
+        handle_connection(stream);
     }
 }
 
