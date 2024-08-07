@@ -11,6 +11,7 @@ use parser::Parser;
 use resolver::Resolver;
 use scanner::Scanner;
 use token::{Token, TokenType};
+use wasm_bindgen::prelude::wasm_bindgen;
 
 pub mod ast;
 pub mod class;
@@ -66,6 +67,34 @@ pub fn run_prompt<W: Write>(
             debug_mode,
         );
         *had_error = false;
+    }
+}
+
+#[wasm_bindgen]
+pub fn run_lox(source: &str, debug_mode: bool) {
+    let mut writer = std::io::stdout();
+    let mut scanner = Scanner::new(String::from(source));
+    let tokens = scanner.scan_tokens();
+    let mut parser = Parser::new(tokens);
+    let stmts = parser.parse();
+    match stmts {
+        Ok(stmts) => {
+            let mut interpreter = Interpreter::new(&mut writer);
+            if debug_mode {
+                let mut ast_printer = AstPrinter;
+                ast_printer.print(stmts.clone());
+            }
+            let mut resolver = Resolver::new(interpreter);
+            if let Err(e) = resolver.resolve_stmts(&stmts) {
+                e.report();
+                // had_error = true;
+            }
+            interpreter = resolver.interpreter;
+            interpreter.interpret(&stmts);
+        }
+        Err(_e) => {
+            // had_error = true;
+        }
     }
 }
 
