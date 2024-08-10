@@ -16,6 +16,15 @@
     <div class="container">
       <div class="container-inner">
         <textarea id="code" autofocus>
+fun hello(x) {
+  if (x &lt;= 0) {
+    return;
+  }
+  print "hello";
+  return hello(x - 1);
+}
+
+hello(3);
         </textarea>
       </div>
       <div class="container-inner">
