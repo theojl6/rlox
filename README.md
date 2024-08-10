@@ -1,9 +1,12 @@
 # Rlox Features
+Try it out on [playground!](https://theojl6.github.io/)
 
 ## Syntax
 
 ### Variables
-`var x = 1;`
+```
+var x = 1;
+```
 
 ### Functions
 ```
@@ -27,7 +30,9 @@ class Chocolate < Bar { }
 Chocolate().boo()
 ```
 
-# Development
+# Rust Development
 Based on https://craftinginterpreters.com/ 
 
-Implemented using Rust
+## Testing
+`cargo test`
+includes unit tests as well as integration tests, .txt sample files are inside tests/samples/
