@@ -10,4 +10,5 @@ module.exports = {
   plugins: [
     new CopyWebpackPlugin(['index.html'])
   ],
+  mode: 'production',
 };
