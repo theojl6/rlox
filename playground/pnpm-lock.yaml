@@ -15,9 +15,6 @@ importers:
       copy-webpack-plugin:
         specifier: ^5.0.0
         version: 5.1.2(webpack@4.47.0(webpack-cli@3.3.12))
-      hello-wasm-pack:
-        specifier: ^0.1.0
-        version: 0.1.0
       webpack:
         specifier: ^4.29.3
         version: 4.47.0(webpack-cli@3.3.12)
@@ -869,9 +866,6 @@ packages:
   hasown@2.0.2:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
-
-  hello-wasm-pack@0.1.0:
-    resolution: {integrity: sha512-3hx0GDkDLf/a9ThCMV2qG4mwza8N/MCtm8aeFFc/cdBCL2zMJ1kW1wjNl7xPqD1lz8Yl5+uhnc/cpui4dLwz/w==}
 
   hmac-drbg@1.0.1:
     resolution: {integrity: sha512-Tti3gMqLdZfhOQY1Mzf/AanLiqh1WTiJgEj26ZuYQ9fbkLomzGchCws4FyrSd4VkpBfiNhaE1On+lOz894jvXg==}
@@ -3120,8 +3114,6 @@ snapshots:
   hasown@2.0.2:
     dependencies:
       function-bind: 1.1.2
-
-  hello-wasm-pack@0.1.0: {}
 
   hmac-drbg@1.0.1:
     dependencies:
