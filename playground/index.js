@@ -1,5 +1,15 @@
 import * as wasm from "rlox";
 
-const inputVal = document.getElementById("code").value;
-const output = wasm.run_lox(inputVal);
-document.getElementById("output").innerHTML = output;
+const button = document.getElementById("submit");
+const input = document.getElementById("code");
+
+const runCode = function() {
+  document.getElementById("output").innerHTML = wasm.run_lox(input.value);
+}
+
+button.onclick = runCode;
+input.onkeydown = function(ev) {
+  if (ev.key == 'Enter') {
+    runCode();
+  }
+}

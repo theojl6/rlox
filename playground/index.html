@@ -3,13 +3,26 @@
   <head>
     <link rel="stylesheet" href="index.css">
     <meta charset="utf-8">
-    <title>Rlox Playground</title>
+    <title>rlox playground</title>
   </head>
   <body>
+    <div class="header">
+      <h1>rlox playground</h1>
+      <p>exported as a wasm binary and run on the browser.</p>
+      <label for="code">input code:
+        <button id="submit">submit</button>
+      </label>
+    </div>
+    <div class="container">
+      <div class="container-inner">
+        <textarea id="code" autofocus>
+        </textarea>
+      </div>
+      <div class="container-inner">
+        <div id="output"></div>
+      </div>
+    </div>
     <noscript>This page contains webassembly and javascript content, please enable javascript in your browser.</noscript>
-    <label for="code">Input code:</label>
-    <input id="code" />
-    <span id="output"></span>
     <script src="./bootstrap.js"></script>
   </body>
 </html>

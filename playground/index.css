@@ -1,3 +1,44 @@
 body {
-  background-color: lightblue;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  color: #70a2ac;
+  background-color: #efe2dd;
+}
+
+button {
+  border: none;
+  color: inherit;
+  background-color: inherit;
+  cursor: pointer;
+}
+
+.header {
+  margin: 1.5rem;
+}
+
+.container {
+  display: flex;
+}
+
+.container .container-inner {
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+}
+
+.container textarea {
+  resize: none;
+  background-color: #bfd3d6;
+  box-sizing: border-box; /* fit parent width */
+  height: 100%;
+}
+
+.container #output {
+  overflow-y: auto;
+  margin: 0.1rem 0.1rem 0.2rem 0.1rem;
+  padding: 0.5rem;
+  color: #efe2dd;
+  background-color: #95a3ac;
+  box-sizing: border-box; /* fit parent width */
+  height: 100%;
 }
