@@ -1,5 +1,5 @@
 # Rlox Features
-Try it out on [playground!](https://theojl6.github.io/)
+Try it out on the online <a href="https://theojl6.github.io" target="_blank">playground!</a>
 
 ## Syntax
 
