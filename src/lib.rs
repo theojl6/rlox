@@ -1,8 +1,4 @@
-use std::{
-    fs,
-    io::{self, Write},
-    process,
-};
+use std::{fs, io::Write, process};
 
 use ast::AstPrinter;
 use error::{LoxError, RuntimeError};
@@ -52,7 +48,7 @@ pub fn run_prompt<W: Write>(
     loop {
         let mut prompt = String::new();
         println!("> ");
-        io::stdin()
+        std::io::stdin()
             .read_line(&mut prompt)
             .expect("failed to read line");
         prompt = prompt.trim().to_string();
@@ -71,8 +67,8 @@ pub fn run_prompt<W: Write>(
 }
 
 #[wasm_bindgen]
-pub fn run_lox(source: &str, debug_mode: bool) {
-    let mut writer = std::io::stdout();
+pub fn run_lox(source: &str) -> String {
+    let mut writer = std::io::Cursor::new(Vec::<u8>::new());
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
     let mut parser = Parser::new(tokens);
@@ -80,10 +76,10 @@ pub fn run_lox(source: &str, debug_mode: bool) {
     match stmts {
         Ok(stmts) => {
             let mut interpreter = Interpreter::new(&mut writer);
-            if debug_mode {
-                let mut ast_printer = AstPrinter;
-                ast_printer.print(stmts.clone());
-            }
+            // if debug_mode {
+            //     let mut ast_printer = AstPrinter;
+            //     ast_printer.print(stmts.clone());
+            // }
             let mut resolver = Resolver::new(interpreter);
             if let Err(e) = resolver.resolve_stmts(&stmts) {
                 e.report();
@@ -96,6 +92,8 @@ pub fn run_lox(source: &str, debug_mode: bool) {
             // had_error = true;
         }
     }
+    let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
+    string
 }
 
 pub fn run<W: Write>(
