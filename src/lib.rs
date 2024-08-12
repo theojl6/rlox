@@ -76,23 +76,14 @@ pub fn run_lox(source: &str) -> String {
     match stmts {
         Ok(stmts) => {
             let mut interpreter = Interpreter::new(&mut writer);
-            // if debug_mode {
-            //     let mut ast_printer = AstPrinter;
-            //     ast_printer.print(stmts.clone());
-            // }
             let mut resolver = Resolver::new(interpreter);
-            if let Err(e) = resolver.resolve_stmts(&stmts) {
-                e.report();
-                // had_error = true;
-            }
+            if let Err(e) = resolver.resolve_stmts(&stmts) {}
             interpreter = resolver.interpreter;
             interpreter.interpret(&stmts);
         }
-        Err(_e) => {
-            // had_error = true;
-        }
+        Err(_e) => {}
     }
-    let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
+    let string = String::from_utf8(writer.get_ref().to_vec()).expect("Found invalid UTF-8");
     string
 }
 
