@@ -174,6 +174,18 @@ impl<'a> Interpreter<'a> {
             self.globals.borrow().get(name.clone())
         }
     }
+
+    fn error(
+        &mut self,
+        token: Token,
+        message: &str,
+        value: Option<Rc<RefCell<Object>>>,
+    ) -> RuntimeError {
+        self.writer
+            .write_all(format!("{}\n", message).as_bytes())
+            .expect("Cannot write error to buffer");
+        RuntimeError::new(token, message, value)
+    }
 }
 
 impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
@@ -219,51 +231,41 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Bool(l > r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
                     TokenType::GreaterEqual => match (&*left_obj.borrow(), &*right_obj.borrow()) {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Bool(l >= r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
                     TokenType::Less => match (&*left_obj.borrow(), &*right_obj.borrow()) {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Bool(l < r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
                     TokenType::LessEqual => match (&*left_obj.borrow(), &*right_obj.borrow()) {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Bool(l <= r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
                     TokenType::Minus => match (&*left_obj.borrow(), &*right_obj.borrow()) {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Number(l - r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
                     TokenType::Plus => match (&*left_obj.borrow(), &*right_obj.borrow()) {
                         (Object::Number(l), Object::Number(r)) => {
@@ -272,7 +274,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                         (Object::String(l), Object::String(r)) => {
                             Ok(Rc::new(RefCell::new(Object::String(l.to_owned() + r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
+                        (_, _) => Err(self.error(
                             operator.clone(),
                             "Operands must be two numbers or two strings.",
                             None,
@@ -282,27 +284,19 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Number(l / r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
                     TokenType::Star => match (&*left_obj.borrow(), &*right_obj.borrow()) {
                         (Object::Number(l), Object::Number(r)) => {
                             Ok(Rc::new(RefCell::new(Object::Number(l * r))))
                         }
-                        (_, _) => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operands must be numbers.",
-                            None,
-                        )),
+                        (_, _) => {
+                            Err(self.error(operator.clone(), "Operands must be numbers.", None))
+                        }
                     },
-                    _ => Err(RuntimeError::new(
-                        operator.clone(),
-                        "Invalid use of operator.",
-                        None,
-                    )),
+                    _ => Err(self.error(operator.clone(), "Invalid use of operator.", None)),
                 }
             }
             Expr::Call {
@@ -320,7 +314,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                 let x = match &*callee.borrow() {
                     Object::Function(func) => {
                         if arguments.len() != func.arity() {
-                            return Err(RuntimeError::new(
+                            return Err(self.error(
                                 p.clone(),
                                 &("Expected ".to_owned()
                                     + &func.arity().to_string()
@@ -334,7 +328,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     }
                     Object::NativeFunction(func) => {
                         if arguments.len() != func.arity() {
-                            return Err(RuntimeError::new(
+                            return Err(self.error(
                                 p.clone(),
                                 &("Expected ".to_owned()
                                     + &func.arity().to_string()
@@ -348,7 +342,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     }
                     Object::Class(class) => {
                         if arguments.len() != class.arity() {
-                            return Err(RuntimeError::new(
+                            return Err(self.error(
                                 p.clone(),
                                 &("Expected ".to_owned()
                                     + &class.arity().to_string()
@@ -360,11 +354,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                         }
                         class.call(self, arguments)
                     }
-                    _ => Err(RuntimeError::new(
-                        p.clone(),
-                        "Can only call functions and classes",
-                        None,
-                    )),
+                    _ => Err(self.error(p.clone(), "Can only call functions and classes", None)),
                 };
                 return x;
             }
@@ -373,11 +363,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                 if let Object::Instance(i) = &*object.borrow() {
                     return Ok(i.get(name)?);
                 }
-                Err(RuntimeError::new(
-                    name.clone(),
-                    "Only instances have properties.",
-                    None,
-                ))
+                Err(self.error(name.clone(), "Only instances have properties.", None))
             }
             Expr::Grouping { expression } => self.visit_expr(expression),
             Expr::Literal { value } => Ok(Rc::new(RefCell::new(value.clone()))),
@@ -410,11 +396,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     i.set(name, Rc::clone(&value));
                     return Ok(value);
                 }
-                Err(RuntimeError::new(
-                    name.clone(),
-                    "Only instances have fields.",
-                    None,
-                ))
+                Err(self.error(name.clone(), "Only instances have fields.", None))
             }
             Expr::Super { keyword, method } => {
                 let distance = *self.locals.get(e).unwrap();
@@ -437,7 +419,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                             }
                         }
                         None => {
-                            return Err(RuntimeError::new(
+                            return Err(self.error(
                                 method.clone(),
                                 &format!("Undefined property '{}'", method.lexeme.clone()),
                                 None,
@@ -458,11 +440,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                     ))))),
                     TokenType::Minus => match &*obj.borrow() {
                         Object::Number(n) => Ok(Rc::new(RefCell::new(Object::Number(-n)))),
-                        _ => Err(RuntimeError::new(
-                            operator.clone(),
-                            "Operand must be a number",
-                            None,
-                        )),
+                        _ => Err(self.error(operator.clone(), "Operand must be a number", None)),
                     },
                     _ => Ok(Rc::new(RefCell::new(Object::Nil))),
                 }
@@ -547,7 +525,7 @@ impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
                                 superclass = Some(Rc::new(RefCell::new(Object::Class(c.clone()))));
                             }
                             _ => {
-                                return Err(RuntimeError::new(
+                                return Err(self.error(
                                     variable_name.clone(),
                                     "Superclass must be a class.",
                                     None,
