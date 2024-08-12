@@ -8,8 +8,3 @@ const runCode = function() {
 }
 
 button.onclick = runCode;
-input.onkeydown = function(ev) {
-  if (ev.key == 'Enter') {
-    runCode();
-  }
-}
