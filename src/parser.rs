@@ -1,17 +1,24 @@
+use std::io::Write;
+
 use crate::ast::Expr;
 use crate::error::lox_error;
 use crate::error::SyntaxError;
 use crate::interpreter::Object;
 use crate::stmt::Stmt;
 use crate::token::{Token, TokenType};
-pub struct Parser<'a> {
+pub struct Parser<'a, W> {
     pub tokens: &'a Vec<Token>,
     pub current: usize,
+    pub writer: W,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(tokens: &'a Vec<Token>) -> Self {
-        Self { tokens, current: 0 }
+impl<'a, W: Write + 'static> Parser<'a, W> {
+    pub fn new(tokens: &'a Vec<Token>, writer: W) -> Self {
+        Self {
+            tokens,
+            current: 0,
+            writer,
+        }
     }
 
     pub fn parse(&mut self) -> Result<Vec<Stmt>, SyntaxError> {
@@ -54,10 +61,7 @@ impl<'a> Parser<'a> {
                     });
                 }
                 _ => {
-                    return Err(SyntaxError::new(
-                        equals.clone(),
-                        "Invalid assignment target.",
-                    ));
+                    return Err(self.error(equals.clone(), "Invalid assignment target."));
                 }
             }
         }
@@ -562,10 +566,7 @@ impl<'a> Parser<'a> {
                 expression: Box::new(expr),
             });
         }
-        Err(SyntaxError::new(
-            self.tokens[self.current].clone(),
-            &"Expected expression.",
-        ))
+        Err(self.error(self.tokens[self.current].clone(), &"Expected expression."))
     }
 
     fn consume(&mut self, token_type: &TokenType, message: &str) -> Result<Token, SyntaxError> {
@@ -573,6 +574,15 @@ impl<'a> Parser<'a> {
             return Ok(self.advance());
         }
 
-        Err(SyntaxError::new(self.tokens[self.current].clone(), message))
+        Err(self.error(self.tokens[self.current].clone(), message))
+    }
+
+    fn error(&mut self, token: Token, message: &str) -> SyntaxError {
+        self.writer
+            .write_all(
+                format!("[line {}] Error {}: {message}", token.line, token.lexeme).as_bytes(),
+            )
+            .expect("Cannot write error to buffer.");
+        SyntaxError::new(token, message)
     }
 }

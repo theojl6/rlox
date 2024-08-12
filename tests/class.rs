@@ -6,10 +6,10 @@ use rlox::run_file;
 fn class_1() {
     let mut had_error = false;
     let mut had_runtime_error = false;
-    let mut writer = Cursor::new(Vec::<u8>::new());
+    let writer = Cursor::new(Vec::<u8>::new());
     run_file(
         "tests/samples/class_1.txt",
-        &mut writer,
+        writer,
         &mut had_error,
         &mut had_runtime_error,
         false,

@@ -1,5 +1,6 @@
 use std::cell::RefCell;
 use std::hash::{Hash, Hasher};
+use std::io::Write;
 use std::rc::Rc;
 
 use crate::environment::Environment;
@@ -50,9 +51,9 @@ impl Function {
 }
 
 impl Callable for Function {
-    fn call(
+    fn call<W: Write + 'static>(
         &self,
-        interpreter: &mut Interpreter,
+        interpreter: &mut Interpreter<W>,
         arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
@@ -130,9 +131,9 @@ impl Callable for NativeFunction {
         self.arity
     }
 
-    fn call(
+    fn call<W: Write + 'static>(
         &self,
-        _interpreter: &mut Interpreter,
+        _interpreter: &mut Interpreter<W>,
         _arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where

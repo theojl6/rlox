@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Write;
 
 use crate::ast::Expr;
 use crate::ast::Visitor;
@@ -8,15 +9,15 @@ use crate::interpreter::Object;
 use crate::stmt::Stmt;
 use crate::token::Token;
 
-pub struct Resolver<'a> {
-    pub interpreter: Interpreter<'a>,
+pub struct Resolver<W> {
+    pub interpreter: Interpreter<W>,
     scopes: Vec<HashMap<String, bool>>,
     current_function: FunctionType,
     current_class: ClassType,
 }
 
-impl Resolver<'_> {
-    pub fn new(interpreter: Interpreter) -> Resolver {
+impl<W: Write + 'static> Resolver<W> {
+    pub fn new(interpreter: Interpreter<W>) -> Resolver<W> {
         Resolver {
             interpreter,
             // this only tracks local block scopes, variables declared at the top level in the global scope
@@ -100,7 +101,7 @@ impl Resolver<'_> {
     }
 }
 
-impl<'a> Visitor<(), ()> for Resolver<'_> {
+impl<W: Write + 'static> Visitor<(), ()> for Resolver<W> {
     fn visit_expr(&mut self, e: &Expr) -> Result<(), RuntimeError> {
         match e {
             Expr::Assign { name, value } => {

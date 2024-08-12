@@ -3,7 +3,7 @@ use rlox::run_prompt;
 use std::env;
 
 fn main() {
-    let mut writer = std::io::stdout();
+    let writer = std::io::stdout();
     let mut had_error = false;
     let mut had_runtime_error = false;
     let args: Vec<String> = env::args().collect();
@@ -13,17 +13,12 @@ fn main() {
     } else if args.len() == 2 {
         run_file(
             &args[1],
-            &mut writer,
+            writer,
             &mut had_error,
             &mut had_runtime_error,
             debug_mode,
         );
     } else {
-        run_prompt(
-            &mut writer,
-            &mut had_error,
-            &mut had_runtime_error,
-            debug_mode,
-        );
+        run_prompt(writer, &mut had_error, &mut had_runtime_error, debug_mode);
     }
 }

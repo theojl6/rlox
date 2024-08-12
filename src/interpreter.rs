@@ -42,9 +42,9 @@ impl Hash for Object {
 }
 
 pub trait Callable {
-    fn call(
+    fn call<W: Write + 'static>(
         &self,
-        interpreter: &mut Interpreter,
+        interpreter: &mut Interpreter<W>,
         arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where
@@ -106,15 +106,15 @@ impl PartialEq for Object {
 
 impl Eq for Object {}
 
-pub struct Interpreter<'a> {
+pub struct Interpreter<W> {
     pub globals: Rc<RefCell<Environment>>,
     environment: Rc<RefCell<Environment>>,
     locals: HashMap<Expr, usize>,
-    writer: &'a mut (dyn Write + 'a),
+    pub writer: W,
 }
 
-impl<'a> Interpreter<'a> {
-    pub fn new(writer: &'a mut (dyn Write + 'a)) -> Self {
+impl<W: Write + 'static> Interpreter<W> {
+    pub fn new(writer: W) -> Self {
         let globals = Rc::new(RefCell::new(Environment::new(None)));
         globals.borrow_mut().define(
             String::from("clock"),
@@ -188,7 +188,7 @@ impl<'a> Interpreter<'a> {
     }
 }
 
-impl<'a> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<'a> {
+impl<W: Write + 'static> Visitor<Rc<RefCell<Object>>, ()> for Interpreter<W> {
     fn visit_expr(&mut self, e: &Expr) -> Result<Rc<RefCell<Object>>, RuntimeError> {
         match e {
             Expr::Assign { name, value } => {
@@ -621,8 +621,8 @@ mod tests {
 
     #[test]
     fn unary() {
-        let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
-        let mut interpreter = Interpreter::new(&mut writer);
+        let writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
+        let mut interpreter = Interpreter::new(writer);
         let unary_expression = Expr::Unary {
             operator: Token {
                 token_type: TokenType::Minus,
@@ -643,8 +643,8 @@ mod tests {
 
     #[test]
     fn assignment() {
-        let mut writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
-        let mut _interpreter = Interpreter::new(&mut writer);
+        let writer: Box<dyn std::io::Write + 'static> = Box::new(std::io::stdout());
+        let mut _interpreter = Interpreter::new(writer);
         let _assignment_expression = Expr::Assign {
             name: Token {
                 token_type: TokenType::Identifier,

@@ -1,7 +1,7 @@
-use std::borrow::Borrow;
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::fmt;
+use std::io::Write;
 use std::rc::Rc;
 
 use crate::error::RuntimeError;
@@ -45,9 +45,9 @@ impl Class {
 }
 
 impl Callable for Class {
-    fn call(
+    fn call<W: Write + 'static>(
         &self,
-        interpreter: &mut Interpreter,
+        interpreter: &mut Interpreter<W>,
         arguments: Vec<Rc<RefCell<Object>>>,
     ) -> Result<Rc<RefCell<Object>>, RuntimeError>
     where

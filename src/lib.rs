@@ -22,9 +22,9 @@ pub mod scanner;
 pub mod stmt;
 pub mod token;
 
-pub fn run_file<W: Write>(
+pub fn run_file<W: Write + 'static>(
     path: &str,
-    writer: &mut W,
+    writer: W,
     had_error: &mut bool,
     had_runtime_error: &mut bool,
     debug_mode: bool,
@@ -39,13 +39,14 @@ pub fn run_file<W: Write>(
     }
 }
 
-pub fn run_prompt<W: Write>(
-    writer: &mut W,
+pub fn run_prompt<W: Write + 'static>(
+    _writer: W,
     had_error: &mut bool,
     had_runtime_error: &mut bool,
     debug_mode: bool,
 ) {
     loop {
+        let writer = std::io::stdout();
         let mut prompt = String::new();
         println!("> ");
         std::io::stdin()
@@ -68,39 +69,47 @@ pub fn run_prompt<W: Write>(
 
 #[wasm_bindgen]
 pub fn run_lox(source: &str) -> String {
-    let mut writer = std::io::Cursor::new(Vec::<u8>::new());
+    let writer = std::io::Cursor::new(Vec::<u8>::new());
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
-    let mut parser = Parser::new(tokens);
+    let mut parser = Parser::new(tokens, writer);
     let stmts = parser.parse();
+    let mut string = "".to_string();
     match stmts {
         Ok(stmts) => {
-            let mut interpreter = Interpreter::new(&mut writer);
+            let mut interpreter = Interpreter::new(parser.writer);
             let mut resolver = Resolver::new(interpreter);
-            if let Err(e) = resolver.resolve_stmts(&stmts) {}
+            if let Err(e) = resolver.resolve_stmts(&stmts) {
+                resolver
+                    .interpreter
+                    .writer
+                    .write_all(&"some error".as_bytes().to_vec())
+                    .expect("Cannot write to output");
+            }
             interpreter = resolver.interpreter;
             interpreter.interpret(&stmts);
+            string = String::from_utf8(interpreter.writer.get_ref().to_vec())
+                .expect("Found invalid UTF-8");
         }
         Err(_e) => {}
     }
-    let string = String::from_utf8(writer.get_ref().to_vec()).expect("Found invalid UTF-8");
     string
 }
 
-pub fn run<W: Write>(
+pub fn run<W: Write + 'static>(
     source: &str,
-    writer: &mut W,
+    writer: W,
     had_error: &mut bool,
     _had_runtime_error: &mut bool,
     debug_mode: bool,
 ) {
     let mut scanner = Scanner::new(String::from(source));
     let tokens = scanner.scan_tokens();
-    let mut parser = Parser::new(tokens);
+    let mut parser = Parser::new(tokens, writer);
     let stmts = parser.parse();
     match stmts {
         Ok(stmts) => {
-            let mut interpreter = Interpreter::new(writer);
+            let mut interpreter = Interpreter::new(parser.writer);
             if debug_mode {
                 let mut ast_printer = AstPrinter;
                 ast_printer.print(stmts.clone());
