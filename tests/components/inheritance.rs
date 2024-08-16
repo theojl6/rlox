@@ -1,18 +1,17 @@
 use std::io::Cursor;
 
-use rlox::run_file;
+use crate::helpers::test_file;
 
 #[test]
 fn inheritance_1() {
     let mut had_error = false;
     let mut had_runtime_error = false;
-    let mut writer = Cursor::new(Vec::<u8>::new());
-    run_file(
+    let writer = Cursor::new(Vec::<u8>::new());
+    let writer = test_file(
         "tests/samples/inheritance_1.txt",
-        &mut writer,
+        writer,
         &mut had_error,
         &mut had_runtime_error,
-        false,
     );
     let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
     assert_eq!(string, "Fry until golden brown.\n");
@@ -24,13 +23,12 @@ fn inheritance_1() {
 fn inheritance_2() {
     let mut had_error = false;
     let mut had_runtime_error = false;
-    let mut writer = Cursor::new(Vec::<u8>::new());
-    run_file(
+    let writer = Cursor::new(Vec::<u8>::new());
+    let writer = test_file(
         "tests/samples/inheritance_2.txt",
-        &mut writer,
+        writer,
         &mut had_error,
         &mut had_runtime_error,
-        false,
     );
     let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
     assert_eq!(
@@ -45,13 +43,12 @@ fn inheritance_2() {
 fn inheritance_3() {
     let mut had_error = false;
     let mut had_runtime_error = false;
-    let mut writer = Cursor::new(Vec::<u8>::new());
-    run_file(
+    let writer = Cursor::new(Vec::<u8>::new());
+    let writer = test_file(
         "tests/samples/inheritance_3.txt",
-        &mut writer,
+        writer,
         &mut had_error,
         &mut had_runtime_error,
-        false,
     );
     let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
     assert_eq!(string, "A method\n");

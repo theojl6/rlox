@@ -1,18 +1,17 @@
 use std::io::Cursor;
 
-use rlox::run_file;
+use crate::helpers::test_file;
 
 #[test]
 fn variables_1() {
     let mut had_error = false;
     let mut had_runtime_error = false;
-    let mut writer = Cursor::new(Vec::<u8>::new());
-    run_file(
+    let writer = Cursor::new(Vec::<u8>::new());
+    let writer = test_file(
         "tests/samples/variables_1.txt",
-        &mut writer,
+        writer,
         &mut had_error,
         &mut had_runtime_error,
-        false,
     );
     let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
     assert_eq!(string, "1\n");
@@ -24,13 +23,12 @@ fn variables_1() {
 fn variables_2() {
     let mut had_error = false;
     let mut had_runtime_error = false;
-    let mut writer = Cursor::new(Vec::<u8>::new());
-    run_file(
+    let writer = Cursor::new(Vec::<u8>::new());
+    let writer = test_file(
         "tests/samples/variables_2.txt",
-        &mut writer,
+        writer,
         &mut had_error,
         &mut had_runtime_error,
-        false,
     );
     let string = String::from_utf8((&writer.get_ref()).to_vec()).expect("Found invalid UTF-8");
     assert_eq!(string, "2\n3\n4\n");
