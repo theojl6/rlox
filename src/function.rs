@@ -114,11 +114,11 @@ impl Callable for Function {
 #[derive(Debug, Clone, Hash)]
 pub struct NativeFunction {
     arity: usize,
-    native_function: fn(),
+    native_function: fn() -> Object,
 }
 
 impl NativeFunction {
-    pub fn new(arity: usize, native_function: fn()) -> NativeFunction {
+    pub fn new(arity: usize, native_function: fn() -> Object) -> NativeFunction {
         NativeFunction {
             arity,
             native_function,
@@ -139,8 +139,8 @@ impl Callable for NativeFunction {
     where
         Self: Sized,
     {
-        (self.native_function)();
+        let result = (self.native_function)();
 
-        Ok(Rc::new(RefCell::new(Object::Nil)))
+        Ok(Rc::new(RefCell::new(result)))
     }
 }

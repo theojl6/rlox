@@ -126,7 +126,7 @@ impl<W: Write + 'static> Interpreter<W> {
                         .duration_since(UNIX_EPOCH)
                         .expect("Time went backwards")
                         .as_millis();
-                    println!("{:?}", since_the_epoch);
+                    return Object::Number(since_the_epoch as f32);
                 },
             )))),
         );
